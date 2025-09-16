@@ -1,10 +1,9 @@
 #!/usr/bin/env python3
 import pygame
+from ui.screen import Screen
 
 def main():
-    pygame.init()
-    screen = pygame.display.set_mode((800, 800))
-    pygame.display.set_caption("Gomoku")
+    screen = Screen()
 
     running = True
     while running:
@@ -12,8 +11,7 @@ def main():
             if event.type == pygame.QUIT:
                 running = False
 
-        screen.fill((220, 179, 92))
-        pygame.display.flip()
+        screen.update()
 
     pygame.quit()
 
