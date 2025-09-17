@@ -2,10 +2,13 @@ import pygame
 import pygame_menu
 from config import *
 from utils import utils
-from ui.stone import Stone
+from ui.stones import Stones
+from player.player import Player
 
 class Screen:
-    def __init__(self):
+    def __init__(self, stones):
+        self.stones = stones
+
         pygame.init()
         self.screen = pygame.display.set_mode((SCREEN_WIDTH, SCREEN_HEIGHT))
         pygame.display.set_caption("Gomoku")
@@ -58,9 +61,9 @@ class Screen:
 
 
     def drawStones(self):
-        # TODO: function will take in the player / ai stones as a list. For each stone in the list, draw the stone
-        stone = Stone((1, 2), BLACK)
-        stone.draw(self.screen)
-
-        stone1 = Stone((3, 4), WHITE)
-        stone1.draw(self.screen)
+        tile, colour = self.stones.shadow
+        pygame.draw.circle(self.screen, GREY, utils.tile_to_coord(tile), STONE_RADIUS)
+        
+        for tile, colour in self.stones.map.items():
+            pygame.draw.circle(self.screen, colour, utils.tile_to_coord(tile), STONE_RADIUS)
+            pygame.draw.circle(self.screen, GREY, utils.tile_to_coord(tile), STONE_RADIUS, 1)

@@ -3,8 +3,27 @@ from config import *
 def tile_to_coord(tile):
 	"""convert goban (tile_x, tile_y) to screen (x, y) coordinates"""
 	tile_x, tile_y = tile
+	
 	x_offset = BOARD_WIDTH / (BOARD_GRID - 1)
 	y_offset = BOARD_HEIGHT / (BOARD_GRID - 1)
-	return ((BOARD_OFFSET + (tile_x * x_offset), BOARD_OFFSET + (tile_y * y_offset)))
-
 	
+	x = BOARD_OFFSET + (tile_x * x_offset)
+	y = BOARD_OFFSET + (tile_y * y_offset)
+	
+	return ((x, y))
+
+
+def coord_to_nearest_tile(coord):
+	"""convert screen (x, y) coordinates to the nearest goban tile (tile_x, tile_y)"""
+	x, y = coord
+	
+	x_offset = BOARD_WIDTH / (BOARD_GRID - 1)
+	y_offset = BOARD_HEIGHT / (BOARD_GRID - 1)
+	
+	tile_x = round((x - BOARD_OFFSET) / x_offset)
+	tile_x = max(0, min(tile_x, BOARD_GRID - 1))
+
+	tile_y = round((y - BOARD_OFFSET) / y_offset)
+	tile_y = max(0, min(tile_y, BOARD_GRID - 1))
+	
+	return ((tile_x, tile_y))
