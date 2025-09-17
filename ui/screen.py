@@ -1,4 +1,5 @@
 import pygame
+import pygame_menu
 from config import *
 from utils import utils
 from ui.stone import Stone
@@ -8,6 +9,28 @@ class Screen:
         pygame.init()
         self.screen = pygame.display.set_mode((SCREEN_WIDTH, SCREEN_HEIGHT))
         pygame.display.set_caption("Gomoku")
+        self.menu()
+
+    
+    def menu(self):
+        def start_game():
+            selection = menu.get_input_data()
+            print(selection)
+            for widget_id, (selected, idx) in selection.items():
+                difficulty_name, number = selected
+                print("Selected:", difficulty_name)
+                print("Code:", number)
+                print("Index:", idx)
+            # TODO: save selection. currently this is not used
+            menu.disable()
+
+        menu = pygame_menu.Menu('Gomoku', SCREEN_WIDTH, SCREEN_HEIGHT,
+                                theme=pygame_menu.themes.THEME_BLUE)
+        menu.add.selector('Difficulty : ', [('Standard', 1), ('Pro', 2), ('Swap', 3), ('Swap2', 4)])
+        menu.add.selector('Colour : ', [('Black', 1), ('White',2)])
+        menu.add.button('Play', start_game)
+        menu.add.button('Quit', pygame_menu.events.EXIT)
+        menu.mainloop(self.screen)
 
 
     def update(self):
