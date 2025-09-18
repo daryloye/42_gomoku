@@ -17,15 +17,16 @@ def main():
     player_turn = 1
     running = True
     while running:
-        for event in pygame.event.get():
+        events = pygame.event.get()
+        for event in events:
             if event.type == pygame.QUIT:
                 running = False
         
-        if player_turn == 1 and player1.doAction() == True:
+        if player_turn == 1 and player1.doAction(events):
             player_turn = 2
-        elif player_turn == 2 and player2.doAction():
+        elif player_turn == 2 and player2.doAction(events):
             player_turn = 1
-        screen.update()
+        screen.update(f'Player {player_turn} to move')
 
     pygame.quit()
 

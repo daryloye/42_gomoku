@@ -36,10 +36,11 @@ class Screen:
         menu.mainloop(self.screen)
 
 
-    def update(self):
+    def update(self, text):
         self.screen.fill(SCREEN_BACKGROUND)
         self.drawBoard()
         self.drawStones()
+        self.printText(text)
         pygame.display.flip()
 
 
@@ -67,3 +68,11 @@ class Screen:
         for tile, colour in self.stones.map.items():
             pygame.draw.circle(self.screen, colour, utils.tile_to_coord(tile), STONE_RADIUS)
             pygame.draw.circle(self.screen, GREY, utils.tile_to_coord(tile), STONE_RADIUS, 1)
+
+    
+    def printText(self, text):
+        font = pygame.font.SysFont('Arial', 32)
+        text_surface = font.render(text, True, BLACK)
+        text_rect = text_surface.get_rect()
+        text_rect.center = (SCREEN_WIDTH / 2, BOARD_OFFSET / 2)
+        self.screen.blit(text_surface, text_rect)
