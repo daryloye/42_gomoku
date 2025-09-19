@@ -62,12 +62,18 @@ class Screen:
 
 
     def drawStones(self):
-        tile, colour = self.stones.shadow
-        pygame.draw.circle(self.screen, GREY, utils.tile_to_coord(tile), STONE_RADIUS)
-        
+        if self.stones.shadow:
+            tile, colour = self.stones.shadow
+            if tile not in self.stones.map:
+                shadow_surface = pygame.Surface((STONE_RADIUS * 2, STONE_RADIUS * 2), pygame.SRCALPHA)
+                color_with_alpha = (*colour, 128) if colour != GREY else (*colour, 64) 
+                pygame.draw.circle(shadow_surface, color_with_alpha, (STONE_RADIUS, STONE_RADIUS), STONE_RADIUS)
+                coord = utils.tile_to_coord(tile)
+                self.screen.blit(shadow_surface, (coord[0] - STONE_RADIUS, coord[1] - STONE_RADIUS))
+
         for tile, colour in self.stones.map.items():
             pygame.draw.circle(self.screen, colour, utils.tile_to_coord(tile), STONE_RADIUS)
-            pygame.draw.circle(self.screen, GREY, utils.tile_to_coord(tile), STONE_RADIUS, 1)
+            pygame.draw.circle(self.screen, BLACK if colour == WHITE else WHITE, utils.tile_to_coord(tile), STONE_RADIUS, 1)
 
     
     def printText(self, text):
