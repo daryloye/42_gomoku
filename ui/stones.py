@@ -8,6 +8,7 @@ class Stones:
 		self.map = {}
 		self.shadow = None
 		self.winner = None
+		self.allMoves = {(x, y) for x in range(BOARD_GRID) for y in range(BOARD_GRID)}
 
 	def reset(self):
 		self.map = {}
@@ -16,11 +17,11 @@ class Stones:
 
 	def place(self, tile, colour):
 		self.map[tile] = colour
-		print(self.map)
-		if self.check_win(tile, colour):
-			self.winner = colour
-			return True
-		return False
+		return self
+		# if self.check_win(tile, colour):
+		# 	self.winner = colour
+		# 	return True
+		# return False
 
 	def addShadow(self, tile, colour):
 		self.shadow = (tile, colour)
