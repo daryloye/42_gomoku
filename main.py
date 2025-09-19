@@ -11,22 +11,50 @@ from config import *
 def main():
     stones = Stones()
     screen = Screen(stones)
-    player1 = Player(WHITE, stones)
-    player2 = Player(BLACK, stones)
+    player1 = Player(BLACK, stones)  # Black typically goes first in Gomoku
+    player2 = Player(WHITE, stones)
 
     player_turn = 1
+    game_over = False
+    winner = None
     running = True
+
     while running:
         events = pygame.event.get()
         for event in events:
             if event.type == pygame.QUIT:
                 running = False
-        
-        if player_turn == 1 and player1.doAction(events):
-            player_turn = 2
-        elif player_turn == 2 and player2.doAction(events):
-            player_turn = 1
-        screen.update(f'Player {player_turn} to move')
+            elif event.type == pygame.KEYDOWN and game_over:
+                if event.key == pygame.K_r:
+                    stones.reset()
+                    player_turn = 1
+                    game_over = False
+                    winner = None
+                elif event.key == pygame.K_ESCAPE:
+                    running = False
+
+        if not game_over:
+            if player_turn == 1:
+                result = player1.doAction(events)
+                if result == 'win':
+                    game_over = True
+                    winner = 1
+                elif result:
+                    player_turn = 2
+            elif player_turn == 2:
+                result = player2.doAction(events)
+                if result == 'win':
+                    game_over = True
+                    winner = 2
+                elif result:
+                    player_turn = 1
+
+        if game_over:
+            color_name = "Black" if winner == 1 else "White"
+            screen.update(f'Player {winner} ({color_name}) wins! Press R to replay or ESC to quit')
+        else:
+            color_name = "Black" if player_turn == 1 else "White"
+            screen.update(f'Player {player_turn} ({color_name}) to move')
 
     pygame.quit()
 
