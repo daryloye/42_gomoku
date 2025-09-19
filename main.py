@@ -1,18 +1,28 @@
 #!/usr/bin/env python3
 import os
 os.environ["PYGAME_HIDE_SUPPORT_PROMPT"] = "1"
+import warnings
+warnings.filterwarnings("ignore", category=UserWarning, module="pygame.pkgdata")
 import pygame
 from ui.screen import Screen
 from ui.stones import Stones
 from player.player import Player
+from utils.game_rules import GameRules
 from config import *
 
 
 def main():
-    stones = Stones()
-    screen = Screen(stones)
-    player1 = Player(BLACK, stones)  # Black typically goes first in Gomoku
-    player2 = Player(WHITE, stones)
+    game_rules = GameRules("standard")
+    stones = Stones(game_rules)
+    screen = Screen(stones, game_rules)
+
+    game_rules = GameRules(screen.selected_mode)
+    stones = Stones(game_rules)
+    screen.stones = stones
+    screen.game_rules = game_rules
+    
+    player1 = Player(BLACK, stones, game_rules)
+    player2 = Player(WHITE, stones, game_rules)
 
     player_turn = 1
     game_over = False
@@ -51,10 +61,12 @@ def main():
 
         if game_over:
             color_name = "Black" if winner == 1 else "White"
-            screen.update(f'Player {winner} ({color_name}) wins! Press R to replay or ESC to quit')
+            mode_text = game_rules.get_mode_description()
+            screen.update(f'{mode_text} | {color_name} wins! R=replay ESC=quit')
         else:
             color_name = "Black" if player_turn == 1 else "White"
-            screen.update(f'Player {player_turn} ({color_name}) to move')
+            mode_text = game_rules.get_mode_description()
+            screen.update(f'{mode_text} | {color_name} to move')
 
     pygame.quit()
 

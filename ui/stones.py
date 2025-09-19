@@ -1,14 +1,14 @@
 import pygame
 from utils import utils
-from utils.win_checker import WinChecker
 from config import *
 
 
 class Stones:
-	def __init__(self):
+	def __init__(self, game_rules):
 		self.map = {}
 		self.shadow = None
 		self.winner = None
+		self.game_rules = game_rules
 
 	def reset(self):
 		self.map = {}
@@ -18,7 +18,7 @@ class Stones:
 	def place(self, tile, colour):
 		self.map[tile] = colour
 		print(self.map)
-		if WinChecker.check_win(self.map, tile, colour):
+		if self.game_rules.check_win(self.map, tile, colour):
 			self.winner = colour
 			return True
 		return False
