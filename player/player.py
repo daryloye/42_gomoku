@@ -5,14 +5,15 @@ from config import *
 
 
 class Player:
-	def __init__(self, colour, stones):
+	def __init__(self, colour, stones, game_rules):
 		self.colour = colour
 		self.stones = stones
+		self.game_rules = game_rules
 
 	
 	def doAction(self, events):
 		mouse_pos = pygame.mouse.get_pos()
-		mouse_tile = utils.coord_to_nearest_tile(mouse_pos)
+		mouse_tile = utils.coord_to_nearest_tile(mouse_pos, self.game_rules.board_size)
 		self.stones.addShadow(mouse_tile, self.colour)
 
 		# place stone
