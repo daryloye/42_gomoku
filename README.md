@@ -1,5 +1,0 @@
-﻿# gomoku
-
-Yeah, well, your brain has to fry sometime
-
-October can submit?
