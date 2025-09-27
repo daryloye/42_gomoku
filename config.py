@@ -38,8 +38,6 @@ class GameConfig:
 	player2: str = field(init=False)
 
 
-
-
 @dataclass
 class Config:
 	colour: ColourConfig = field(default_factory=ColourConfig)
@@ -51,28 +49,3 @@ class Config:
 	def __post_init__(self):
 		self.board.width = self.display.width - self.board.offset * 2
 		self.board.height = self.display.height - self.board.offset * 2
-
-
-# below to be deprecated:
-
-# colours
-WHITE = (255, 255, 255)
-BLACK = (0, 0, 0)
-GREY = (150, 150, 150)
-RED = (255, 0, 0)
-BLUE = (0, 0, 255)
-
-# display
-SCREEN_WIDTH = 800
-SCREEN_HEIGHT = 800
-SCREEN_BACKGROUND = (237, 232, 208)
-
-# board
-BOARD_OFFSET = 50
-BOARD_WIDTH = SCREEN_WIDTH - BOARD_OFFSET * 2
-BOARD_HEIGHT = SCREEN_HEIGHT - BOARD_OFFSET * 2
-BOARD_GRID = 19
-BOARD_BACKGROUND = (217,217,214)
-
-# stone
-STONE_RADIUS = 15
