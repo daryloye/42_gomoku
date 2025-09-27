@@ -8,21 +8,22 @@ class Rules:
 
     def checkWin(self, stones, last_tile_placed, last_player_colour):
         """Check if the last move resulted in a win."""
-        if self.getRowLength(stones, last_tile_placed, last_player_colour) > 5:
+        if self.getRowLength(stones, last_tile_placed, last_player_colour) >= 5:
             return True
         return False
 
     
     def getRowLength(self, stones, last_tile_placed, last_player_colour):
-        x, y = last_tile_placed
-    
         directions = [
             (0, 1),
             (1, 0),
             (1, 1),
             (1, -1),
         ]
-        
+
+        x, y = last_tile_placed
+        max_count = 0
+
         for dx, dy in directions:
             count = 1
 
@@ -44,4 +45,6 @@ class Rules:
                 else:
                     break
             
-            return count
+            max_count = max(max_count, count)
+ 
+        return max_count

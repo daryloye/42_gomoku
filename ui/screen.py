@@ -26,9 +26,9 @@ class Screen:
         selection = menu.get_input_data()
 
         self.cfg.board.size = selection['board_size'][0][1]
-        self.cfg.game.difficulty = selection['difficulty'][0][1]
-        self.cfg.game.player1 = selection['player1'][0][1]
-        self.cfg.game.player2 = selection['player2'][0][1]
+        self.cfg.game.difficulty = selection['difficulty'][0][0]
+        self.cfg.game.player1 = selection['player1'][0][0]
+        self.cfg.game.player2 = selection['player2'][0][0]
 
 
     def update(self, stones, text):
@@ -77,7 +77,6 @@ class Screen:
 
     
     def printText(self, text):
-        # Eh text dont exceed screen length le
         if len(text) > 50:
             font_size = 20
         elif len(text) > 40:

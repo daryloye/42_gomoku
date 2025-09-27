@@ -33,7 +33,7 @@ class Game:
 			events = pygame.event.get()
 			for event in events:
 				if event.type == pygame.QUIT:
-					running = False
+					self.running = False
 				elif event.type == pygame.KEYDOWN and self.game_over:
 					if event.key == pygame.K_r:
 						self.reset()
@@ -45,7 +45,7 @@ class Game:
 
 				# check result
 				if self.rules.checkWin(self.stones, last_tile_placed, last_player_colour):
-					game_over = True
+					self.game_over = True
 				else:
 					self.current_player = (self.player1 if self.current_player == self.player2 else self.player2)
 			
