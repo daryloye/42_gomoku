@@ -1,4 +1,4 @@
-from config import *
+from config import Config
 
 
 def minmax(state, depth, player_colour):
