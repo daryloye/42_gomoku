@@ -17,8 +17,8 @@ class Screen:
                                 theme=pygame_menu.themes.THEME_BLUE)
         menu.add.selector('Difficulty : ', [('Standard', 'standard'), ('Free-style', 'freestyle')], selector_id='difficulty')
         menu.add.selector('Board Size : ', [('(19x19)', 19), ('(15x15)', 15), ('(5x5)', 5)], selector_id='board_size')
-        menu.add.selector('P1 (Black) : ', [('Human', 'human'), ('AI', 'ai')], selector_id='player1')
-        menu.add.selector('P2 (White) : ', [('Human', 'human'), ('AI', 'ai')], selector_id='player2')
+        menu.add.selector(f'P1 ({self.cfg.game.player1Name}) : ', [(f'{self.cfg.game.humanName}', 1), (f'{self.cfg.game.aiName}', 2)], selector_id='player1')
+        menu.add.selector(f'P2 ({self.cfg.game.player2Name}) : ', [(f'{self.cfg.game.humanName}', 1), (f'{self.cfg.game.aiName}', 2)], selector_id='player2')
         menu.add.button('Play', menu.disable)
         menu.add.button('Quit', pygame_menu.events.EXIT)
         
@@ -28,8 +28,8 @@ class Screen:
 
         self.cfg.board.size = selection['board_size'][0][1]
         self.cfg.game.difficulty = selection['difficulty'][0][0]
-        self.cfg.game.player1 = selection['player1'][0][0]
-        self.cfg.game.player2 = selection['player2'][0][0]
+        self.cfg.game.player1Type = selection['player1'][0][0]
+        self.cfg.game.player2Type = selection['player2'][0][0]
 
 
     def update(self, stones, text):
@@ -66,16 +66,14 @@ class Screen:
             colour = stones.shadow.colour
             if tile not in stones.map:
                 shadow_surface = pygame.Surface((radius*2, radius*2), pygame.SRCALPHA)
-                color_with_alpha = (*colour, 128) if colour != self.cfg.colour.grey else (*colour, 64) 
+                color_with_alpha = (*colour, 128)
                 pygame.draw.circle(shadow_surface, color_with_alpha, (radius, radius), radius)
                 coord = tile_to_coord(tile, self.cfg.board)
                 self.screen.blit(shadow_surface, (coord[0] - radius, coord[1] - radius))
 
         for tile, colour in stones.map.items():
             pygame.draw.circle(self.screen, colour, tile_to_coord(tile, self.cfg.board), radius)
-            pygame.draw.circle(self.screen,
-                self.cfg.colour.black if colour == self.cfg.colour.white else self.cfg.colour.black,
-                tile_to_coord(tile, self.cfg.board), radius, 1)
+            pygame.draw.circle(self.screen, getOpposingColour(self.cfg, colour), tile_to_coord(tile, self.cfg.board), radius, 1)
 
     
     def _printText(self, text):

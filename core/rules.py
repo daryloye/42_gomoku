@@ -24,8 +24,8 @@ class Rules:
         return False
 
     
-    def evalutateBoard(self, stones, move):
-        score = self._getRowLength(stones, move)
+    def evaluate(self, stones, move):
+        score = self._getRowLength(stones, move) / 5
         return score
 
 

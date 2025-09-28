@@ -22,7 +22,7 @@ class BoardConfig:
 	width: int = field(init=False)
 	height: int = field(init=False)
 	background: tuple[int, int, int] = (217,217,214)
-	size: int = field(init=False)
+	size: int = 19
 
 
 @dataclass
@@ -33,8 +33,14 @@ class StoneConfig:
 @dataclass
 class GameConfig:
 	difficulty: str = field(init=False)
-	player1: str = field(init=False)
-	player2: str = field(init=False)
+	player1Type: str = field(init=False)
+	player1Colour: str = (0, 0, 0)
+	player1Name: str = "BLACK"
+	player2Type: str = field(init=False)
+	player2Colour: str = (255, 255, 255)
+	player2Name: str = "WHITE"
+	humanName: str = "Human"
+	aiName: str = "AI"
 
 
 @dataclass

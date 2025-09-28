@@ -14,8 +14,20 @@ class Game:
 		self.screen = Screen(self.cfg)
 		self.rules = Rules(self.cfg)
 		
-		self.player1 = Player.make(self.cfg.game.player1, self.cfg, self.cfg.colour.black, "BLACK")
-		self.player2 = Player.make(self.cfg.game.player2, self.cfg, self.cfg.colour.white, "WHITE")
+		self.player1 = Player.make(
+			self.cfg,
+			self.rules,
+			self.cfg.game.player1Type,
+			self.cfg.game.player1Colour,
+			self.cfg.game.player1Name
+		)
+		self.player2 = Player.make(
+			self.cfg,
+			self.rules,
+			self.cfg.game.player2Type,
+			self.cfg.game.player2Colour,
+			self.cfg.game.player2Name
+		)
 
 		self._reset()
 		self.running = True
@@ -25,7 +37,7 @@ class Game:
 		self.stones = Stones(self.cfg)
 		self.current_player = self.player1
 		self.game_over = False
-		self.last_action = None
+		self.last_move = None
 	
 		
 	def run(self):
@@ -49,8 +61,9 @@ class Game:
 
 	
 	def _handle_actions(self, events):
-		move = self.current_player.doAction(self.stones, events)
+		move = self.current_player.doAction(self.stones, events, self.last_move)
 		if move and self.rules.validateMove(self.stones, move):
+			self.last_move = move
 			self.stones.place(move)
 
 			captures = self.rules.getCaptures(self.stones, move)

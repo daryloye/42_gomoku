@@ -2,6 +2,7 @@ NAME = Gomoku
 VENV_DIR = .venv
 PIP = $(VENV_DIR)/bin/pip
 PYTHON = $(VENV_DIR)/bin/python
+PYTEST = $(VENV_DIR)/bin/pytest
 REQUIREMENTS = requirements.txt
 
 all: $(NAME)
@@ -18,6 +19,9 @@ setup:
 
 run:
 	$(PYTHON) main.py
+
+test:
+	$(PYTEST)
 
 clean:
 	find . -type d -name __pycache__ -exec rm -rf {} +
