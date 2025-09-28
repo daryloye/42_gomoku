@@ -1,34 +1,43 @@
 import pygame
 from ui.stones import Stones
 from core.utils import *
+from core.move import Move
 from config import Config
+from abc import ABC, abstractmethod
 
 
-class Player:
+class Player(ABC):
 	def __init__(self, cfg, colour, name):
 		self.cfg = cfg
 		self.colour = colour
 		self.name = name
-		self.lastAction = None
 
-	
-	def doAction(self, stones, events):
+	@abstractmethod
+	def doAction(self, stones, events) -> Move | None:
+		pass
+
+	@classmethod
+	def make(cls, kind, cfg, colour, name):
+		mapping = {
+			"Human": Human,
+			"AI": AI
+		}
+		return mapping[kind](cfg, colour, name)
+
+
+class Human(Player):
+	def doAction(self, stones, events) -> Move | None:
 		mouse_pos = pygame.mouse.get_pos()
 		mouse_tile = coord_to_nearest_tile(mouse_pos, self.cfg.board)
-		stones.addShadow(mouse_tile, self.colour)
+		move = Move(mouse_tile, self.colour)
+		stones.addShadow(move)
 
-		# place stone
 		for event in events:
 			if event.type == pygame.MOUSEBUTTONDOWN and event.button == 1:
-				if mouse_tile not in stones.map:
-					#TODO: validate action from game rules
+				return move
+		return None
 
-					stones.place(mouse_tile, self.colour)
-					self.lastAction = (mouse_tile, self.colour)
-					return True
-		return False
-	
-	
-	def getLastAction(self):
-		"""Returns (tile_placed, player_colour)"""
-		return self.lastAction
+
+class AI(Player):
+	def doAction(self, stones, events) -> Move | None:
+		pass

@@ -1,6 +1,5 @@
 from dataclasses import dataclass, field
 
-
 @dataclass
 class ColourConfig:
 	white: tuple[int, int, int] = (255, 255, 255)

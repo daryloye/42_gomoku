@@ -1,5 +1,6 @@
 import pygame
 from core.utils import *
+from core.move import Move
 from config import Config
 
 
@@ -10,9 +11,14 @@ class Stones:
 		self.shadow = None
 	
 
-	def place(self, tile, colour):
-		self.map[tile] = colour
+	def place(self, move: Move):
+		self.map[move.tile] = move.colour
 
 
-	def addShadow(self, tile, colour):
-		self.shadow = (tile, colour)
+	def remove(self, moves: list[Move]):
+		for move in moves:
+			del self.map[move.tile]
+
+
+	def addShadow(self, move: Move):
+		self.shadow = move

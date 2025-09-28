@@ -4,14 +4,15 @@ from config import Config
 from core.utils import *
 from ui.stones import Stones
 
+
 class Screen:
     def __init__(self, cfg: Config):
         self.cfg = cfg
         self.screen = pygame.display.set_mode((self.cfg.display.width, self.cfg.display.height))
-        self.menu()
+        self._menu()
 
     
-    def menu(self):
+    def _menu(self):
         menu = pygame_menu.Menu('Gomoku', self.cfg.display.width, self.cfg.display.height,
                                 theme=pygame_menu.themes.THEME_BLUE)
         menu.add.selector('Difficulty : ', [('Standard', 'standard'), ('Free-style', 'freestyle')], selector_id='difficulty')
@@ -33,13 +34,13 @@ class Screen:
 
     def update(self, stones, text):
         self.screen.fill(self.cfg.display.background)
-        self.drawBoard()
-        self.drawStones(stones)
-        self.printText(text)
+        self._drawBoard()
+        self._drawStones(stones)
+        self._printText(text)
         pygame.display.flip()
 
 
-    def drawBoard(self):
+    def _drawBoard(self):
         board = self.cfg.board
 
         board_rect = pygame.Rect(board.offset, board.offset, board.width, board.height)
@@ -58,10 +59,11 @@ class Screen:
                 tile_to_coord((board.size - 1, i), board))
 
 
-    def drawStones(self, stones):
+    def _drawStones(self, stones):
         radius = self.cfg.stone.radius
         if stones.shadow:
-            tile, colour = stones.shadow
+            tile = stones.shadow.tile
+            colour = stones.shadow.colour
             if tile not in stones.map:
                 shadow_surface = pygame.Surface((radius*2, radius*2), pygame.SRCALPHA)
                 color_with_alpha = (*colour, 128) if colour != self.cfg.colour.grey else (*colour, 64) 
@@ -76,7 +78,7 @@ class Screen:
                 tile_to_coord(tile, self.cfg.board), radius, 1)
 
     
-    def printText(self, text):
+    def _printText(self, text):
         if len(text) > 50:
             font_size = 20
         elif len(text) > 40:
