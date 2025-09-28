@@ -2,7 +2,7 @@ import pygame
 from ui.stones import Stones
 from core.utils import *
 from core.move import Move
-from core.minmax import *
+from core.minmax import Minimax
 from config import Config
 from abc import ABC, abstractmethod
 
@@ -41,8 +41,12 @@ class Human(Player):
 
 
 class AI(Player):
+	def __init__(self, cfg, rules, colour, name):
+		super().__init__(cfg, rules, colour, name)
+		self.minimax = Minimax(cfg, rules, colour, getOpposingColour(cfg, colour))
+
 	def doAction(self, stones, _, last_move) -> Move | None:
-		score, tile = minimax(self.cfg, stones, self.rules, self.colour, last_move, 3)
+		score, tile = self.minimax.choose_move(stones, last_move, 5)
 		if tile == None:
 			return None
 		move = Move(tile, self.colour)
