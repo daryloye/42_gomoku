@@ -2,31 +2,33 @@ import pygame
 from ui.stones import Stones
 from core.utils import *
 from core.move import Move
+from core.minmax import *
 from config import Config
 from abc import ABC, abstractmethod
 
 
 class Player(ABC):
-	def __init__(self, cfg, colour, name):
+	def __init__(self, cfg, rules, colour, name):
 		self.cfg = cfg
+		self.rules = rules
 		self.colour = colour
 		self.name = name
 
 	@abstractmethod
-	def doAction(self, stones, events) -> Move | None:
+	def doAction(self, stones, events, last_move) -> Move | None:
 		pass
 
 	@classmethod
-	def make(cls, kind, cfg, colour, name):
+	def make(cls, cfg, rules, playerType, colour, name):
 		mapping = {
-			"Human": Human,
-			"AI": AI
+			cfg.game.humanName: Human,
+			cfg.game.aiName: AI
 		}
-		return mapping[kind](cfg, colour, name)
+		return mapping[playerType](cfg, rules, colour, name)
 
 
 class Human(Player):
-	def doAction(self, stones, events) -> Move | None:
+	def doAction(self, stones, events, _) -> Move | None:
 		mouse_pos = pygame.mouse.get_pos()
 		mouse_tile = coord_to_nearest_tile(mouse_pos, self.cfg.board)
 		move = Move(mouse_tile, self.colour)
@@ -39,5 +41,10 @@ class Human(Player):
 
 
 class AI(Player):
-	def doAction(self, stones, events) -> Move | None:
-		pass
+	def doAction(self, stones, _, last_move) -> Move | None:
+		score, tile = minmax(self.cfg, stones, self.rules, self.colour, last_move, 2)
+		if tile == None:
+			return None
+		move = Move(tile, self.colour)
+		print(score)
+		return move
