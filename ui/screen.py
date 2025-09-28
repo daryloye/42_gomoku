@@ -16,7 +16,7 @@ class Screen:
         menu = pygame_menu.Menu('Gomoku', self.cfg.display.width, self.cfg.display.height,
                                 theme=pygame_menu.themes.THEME_BLUE)
         menu.add.selector('Difficulty : ', [('Standard', 'standard'), ('Free-style', 'freestyle')], selector_id='difficulty')
-        menu.add.selector('Board Size : ', [('(19x19)', 19), ('(15x15)', 15), ('(5x5)', 5)], selector_id='board_size')
+        menu.add.selector('Board Size : ', [('(19x19)', 19), ('(15x15)', 15), ('(11x11)', 11), ('(7x7)', 7), ('(5x5)', 5)], selector_id='board_size')
         menu.add.selector(f'P1 ({self.cfg.game.player1Name}) : ', [(f'{self.cfg.game.humanName}', 1), (f'{self.cfg.game.aiName}', 2)], selector_id='player1')
         menu.add.selector(f'P2 ({self.cfg.game.player2Name}) : ', [(f'{self.cfg.game.humanName}', 1), (f'{self.cfg.game.aiName}', 2)], selector_id='player2')
         menu.add.button('Play', menu.disable)

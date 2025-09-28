@@ -25,8 +25,18 @@ class Rules:
 
     
     def evaluate(self, stones, move):
-        score = self._getRowLength(stones, move) / 5
-        return score
+        if move == None:
+            return 0
+        if self.checkWin(stones, move):
+            return 1
+        
+        max_len = 0
+        for tile, colour in stones.map.items():
+            if colour == move.colour:
+                temp_move = Move(tile, colour)
+                max_len = max(max_len, self._getRowLength(stones, temp_move))
+        
+        return max_len / 5
 
 
     def _getRowLength(self, stones, move):
