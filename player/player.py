@@ -42,7 +42,7 @@ class Human(Player):
 
 class AI(Player):
 	def doAction(self, stones, _, last_move) -> Move | None:
-		score, tile = minmax(self.cfg, stones, self.rules, self.colour, last_move, 2)
+		score, tile = minimax(self.cfg, stones, self.rules, self.colour, last_move, 3)
 		if tile == None:
 			return None
 		move = Move(tile, self.colour)
