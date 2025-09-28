@@ -11,8 +11,14 @@ def main():
     pygame.init()
     pygame.display.set_caption("Gomoku")
 
-    game = Game()
-    game.run()
+    while True:
+        try:
+            game = Game()
+            result = game.run()
+            if result == "quit":
+                break
+        except Exception:
+            break
 
     pygame.quit()
 

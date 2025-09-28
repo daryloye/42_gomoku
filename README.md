@@ -2,4 +2,6 @@
 
 Yeah, well, your brain has to fry sometime
 
-October can submit?
+## Windows
+
+Erm for testing purpose in windows just python main.py
