@@ -41,6 +41,8 @@ class Game:
         self.current_player = self.player1
         self.game_over = False
         self.last_move = None
+        self.player1_captures = 0
+        self.player2_captures = 0
 
 
     def _show_exit_confirmation(self):
@@ -141,17 +143,19 @@ class Game:
 
                 captures = self.rules.getCaptures(self.stones, move)
                 if captures:
-                    print(f"CAPTURE: Removing {len(captures)} stones: {[(c.tile, c.colour) for c in captures]}")
-                    print(f"CAPTURE: Board before removal: {len(self.stones.map)} stones")
                     self.stones.remove(captures)
-                    print(f"CAPTURE: Board after removal: {len(self.stones.map)} stones")
-                    print(f"CAPTURE: Remaining stones: {list(self.stones.map.keys())}")
+
+                    if self.current_player == self.player1:
+                        self.player1_captures += len(captures)
+                    else:
+                        self.player2_captures += len(captures)
 
                     self._render()
                     pygame.display.flip()
                     pygame.display.update()
 
-                if self.rules.checkWin(self.stones, move):
+                current_captures = self.player1_captures if self.current_player == self.player1 else self.player2_captures
+                if self.rules.checkWin(self.stones, move) or current_captures >= 10:
                     self.game_over = True
                 else:
                     self.current_player = (
@@ -169,10 +173,27 @@ class Game:
         p2_type = " (AI)" if isinstance(self.player2, AI) else ""
         current_type = " (AI)" if isinstance(self.current_player, AI) else ""
 
-        player_info = f"{self.player1.name}{p1_type} vs {self.player2.name}{p2_type}"
-        text = f"{self.cfg.game.difficulty} rules ({self.cfg.board.size}x{self.cfg.board.size}) | {player_info}"
+        line1 = f"{self.cfg.game.difficulty} rules ({self.cfg.board.size}x{self.cfg.board.size}) | {self.player1.name}{p1_type} vs {self.player2.name}{p2_type}"
 
         if self.game_over:
-            self.screen.update(self.stones, f'{text} | {self.current_player.name}{current_type} wins! R=replay M=menu ESC=quit')
+            current_captures = self.player1_captures if self.current_player == self.player1 else self.player2_captures
+            if current_captures >= 10:
+                status = f"{self.current_player.name}{current_type} wins by capture!"
+            else:
+                status = f"{self.current_player.name}{current_type} wins!"
+
+            if self.cfg.game.difficulty == "captures":
+                capture_display = f"Captures: {self.player1.name}={self.player1_captures} {self.player2.name}={self.player2_captures} | "
+            else:
+                capture_display = ""
+
+            line2 = f"{capture_display}{status} | R=replay M=menu ESC=quit"
         else:
-            self.screen.update(self.stones, f'{text} | {self.current_player.name}{current_type} to move | M=menu ESC=quit')
+            if self.cfg.game.difficulty == "captures":
+                capture_display = f"Captures: {self.player1.name}={self.player1_captures} {self.player2.name}={self.player2_captures} | "
+            else:
+                capture_display = ""
+
+            line2 = f"{capture_display}{self.current_player.name}{current_type} to move | M=menu ESC=quit"
+
+        self.screen.update(self.stones, [line1, line2])

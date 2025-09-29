@@ -76,11 +76,14 @@ class Screen:
         rules_menu.mainloop(self.screen)
 
 
-    def update(self, stones, text):
+    def update(self, stones, text_lines):
         self.screen.fill(self.cfg.display.background)
         self._drawBoard()
         self._drawStones(stones)
-        self._printText(text)
+        if isinstance(text_lines, str):
+            self._printText([text_lines])
+        else:
+            self._printText(text_lines)
         pygame.display.flip()
 
 
@@ -120,19 +123,27 @@ class Screen:
             pygame.draw.circle(self.screen, getOpposingColour(self.cfg, colour), tile_to_coord(tile, self.cfg.board), radius, 1)
 
     
-    def _printText(self, text):
-        if len(text) > 50:
+    def _printText(self, text_lines):
+        font_size = 22 if len(text_lines) > 1 else 28
+
+        max_length = max(len(line) for line in text_lines)
+        if max_length > 60:
+            font_size = 18
+        elif max_length > 50:
             font_size = 20
-        elif len(text) > 40:
-            font_size = 24
-        else:
-            font_size = 28
 
         font = pygame.font.SysFont('Arial', font_size)
-        text_surface = font.render(text, True, self.cfg.colour.black)
-        text_rect = text_surface.get_rect()
-        text_rect.center = (self.cfg.display.width / 2, self.cfg.board.offset / 2)
-        self.screen.blit(text_surface, text_rect)
+
+        line_height = font.get_height()
+        total_height = line_height * len(text_lines)
+
+        start_y = (self.cfg.board.offset - total_height) / 2
+
+        for i, line in enumerate(text_lines):
+            text_surface = font.render(line, True, self.cfg.colour.black)
+            text_rect = text_surface.get_rect()
+            text_rect.center = (self.cfg.display.width / 2, start_y + i * line_height + line_height / 2)
+            self.screen.blit(text_surface, text_rect)
 
     def _load_examples(self):
         """Load examples from JSON file"""
