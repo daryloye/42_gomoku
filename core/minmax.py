@@ -1,45 +1,47 @@
 from config import Config
+from ui.stones import Stones
+from core.rules import Rules
+from core.move import Move
+from core.utils import *
 
 
-def minmax(state, depth, player_colour):
+def minmax(cfg, stones, rules, player_colour, last_move, depth) -> tuple[int, tuple[int, int]]:
 	"""
-	state = stones.map
-	action = available moves??
-
-	to test: assign utility of each possible action based on
-	how close it will bring the player to victory
-	eg. 4 stones in a row = 0.4
+	player wants to get score = 1
+	opponent (last_move.colour) wants to get score = -1
 	"""
-	if is_terminal(state) or depth == 0:			# is_terminal --> found a winner?
-		return (getScore(state), None)
+	if is_terminal(stones, rules, last_move) or depth == 0:
+		if last_move is None:
+			return (0, None)
+		raw_score = rules.evaluate(stones, last_move)
+		signed_score = raw_score if player_colour == last_move.colour else -raw_score
+		return (signed_score, last_move.tile)
 	
-	if player_colour == BLACK:
-		max_score = -1
-		best_move = None													# if -1, the min player wins
-		for move in getPossibleMoves(state):									# actions(state) gets list of possible actions based on current state
-			(score, move) = minmax(state.place(move, BLACK), depth - 1, WHITE)		# result(state, action) -> state
-			if score > max_score:
-				max_score = score
-				best_move = move
-		return (max_score, move)
-	else:
-		min_score = 1
-		best_move = None
-		for action in getPossibleMoves(state):
-			(score, move) = minmax(state.place(move, WHITE), depth - 1, BLACK)
-			if score < min_score:
-				min_score = score
-				best_move = move
-		return (min_score, move)
+	is_maximizing = last_move is None or player_colour != last_move.colour
+	best_score = float('-inf') if is_maximizing else float('inf')
+	best_tile = None
+
+	for t in getPossibleTiles(stones):
+		move = Move(t, player_colour)
+		new_stones = stones.copy()
+		new_stones.place(move)
+		score, _ = minmax(cfg, new_stones, rules, getOpposingColour(cfg, player_colour), move, depth - 1)
+
+		if is_maximizing:
+			if score > best_score:
+				best_score, best_tile = score, t
+		else:
+			if score < best_score:
+				best_score, best_tile = score, t
+
+	return (best_score, best_tile)
 
 
-def is_terminal(state):
-	return False
+def is_terminal(stones, rules, last_move):
+	if last_move is None:
+		return False
+	return rules.evaluate(stones, last_move) in (-1, 1) or stones.isFull()
 
 
-def getScore(state):
-	return 0
-
-
-def getPossibleMoves(state):
-	return list(state.allMoves - set(state.map))
+def getPossibleTiles(stones):
+	return list(set(stones.allMoves) - set(stones.map))

@@ -3,7 +3,6 @@ from core.move import Move
 
 
 class Rules:
-    """docstring for the fun of it"""
     def __init__(self, cfg):
         self.cfg = cfg
 
@@ -26,15 +25,8 @@ class Rules:
             return row_length >= 5
 
     
-    def evalutateBoard(self, stones, move):
-        score = self._getRowLength(stones, move)
-
-        if self.cfg.game.difficulty == "no_overline":
-            if score > 5:
-                score = 0
-            elif score == 5:
-                score = 1000
-
+    def evaluate(self, stones, move):
+        score = self._getRowLength(stones, move) / 5
         return score
 
 

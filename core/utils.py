@@ -28,3 +28,9 @@ def coord_to_nearest_tile(coord: tuple[int, int], board: BoardConfig):
 	tile_y = max(0, min(tile_y, board.size - 1))
 	
 	return ((tile_x, tile_y))
+
+
+def getOpposingColour(cfg, colour):
+	return (
+		cfg.game.player1Colour if colour == cfg.game.player2Colour else cfg.game.player1Colour
+	)

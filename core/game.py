@@ -1,4 +1,5 @@
 import pygame
+import time
 from ui.screen import Screen
 from ui.stones import Stones
 from player.player import Player
@@ -14,27 +15,36 @@ class Game:
         self.screen = Screen(self.cfg)
         self.rules = Rules(self.cfg)
 
-        self.player1 = Player.make(self.cfg.game.player1, self.cfg, self.cfg.colour.black, "BLACK")
-        self.player2 = Player.make(self.cfg.game.player2, self.cfg, self.cfg.colour.white, "WHITE")
-
+        self.player1 = Player.make(
+            self.cfg,
+            self.rules,
+            self.cfg.game.player1Type,
+            self.cfg.game.player1Colour,
+            self.cfg.game.player1Name
+        )
+        self.player2 = Player.make(
+            self.cfg,
+            self.rules,
+            self.cfg.game.player2Type,
+            self.cfg.game.player2Colour,
+            self.cfg.game.player2Name
+        )
         self._reset()
         self.running = True
         self.exit_type = None
+        self.ai_move_delay = 1.0
+        self.last_move_time = 0
 
 
     def _reset(self):
         self.stones = Stones(self.cfg)
         self.current_player = self.player1
         self.game_over = False
-        self.last_action = None
-
-
-    def _return_to_main_menu(self):
-        self.exit_type = "menu"
-        self.running = False
+        self.last_move = None
 
 
     def _show_exit_confirmation(self):
+        """Show confirmation popup before exiting the application."""
         import pygame_menu
 
         confirm_menu = pygame_menu.Menu('Confirm Exit', 400, 300,
@@ -58,6 +68,7 @@ class Game:
 
 
     def _show_menu_confirmation(self):
+        """Show confirmation popup before returning to main menu."""
         import pygame_menu
 
         confirm_menu = pygame_menu.Menu('Return to Menu?', 450, 350,
@@ -82,12 +93,16 @@ class Game:
 
 
     def run(self):
+        clock = pygame.time.Clock()
+
         while self.running:
             events = pygame.event.get()
             self._handle_events(events)
             if not self.game_over:
                 self._handle_actions(events)
             self._render()
+
+            clock.tick(60)
 
         return self.exit_type
 
@@ -109,25 +124,47 @@ class Game:
 
 
     def _handle_actions(self, events):
-        move = self.current_player.doAction(self.stones, events)
-        if move and self.rules.validateMove(self.stones, move):
-            self.stones.place(move)
+        current_time = time.time()
 
-            captures = self.rules.getCaptures(self.stones, move)
-            if captures:
-                self.stones.remove(captures)
+        from player.player import AI
+        is_ai_player = isinstance(self.current_player, AI)
 
-            if self.rules.checkWin(self.stones, move):
-                self.game_over = True
-            else:
-                self.current_player = (
-                    self.player1 if self.current_player == self.player2 else self.player2
-                )
+        if is_ai_player and (current_time - self.last_move_time) < self.ai_move_delay:
+            return
+
+        try:
+            move = self.current_player.doAction(self.stones, events, self.last_move)
+            if move and self.rules.validateMove(self.stones, move):
+                self.last_move = move
+                self.stones.place(move)
+                self.last_move_time = current_time
+
+                captures = self.rules.getCaptures(self.stones, move)
+                if captures:
+                    self.stones.remove(captures)
+
+                if self.rules.checkWin(self.stones, move):
+                    self.game_over = True
+                else:
+                    self.current_player = (
+                        self.player1 if self.current_player == self.player2 else self.player2
+                    )
+        except Exception as e:
+            print(f"Error in player action: {e}")
+            print(f"Current player: {type(self.current_player)} - {self.current_player.name}")
 
 
     def _render(self):
-        text = f"{self.cfg.game.difficulty} rules ({self.cfg.board.size}x{self.cfg.board.size}) | {self.current_player.name}"
+        from player.player import AI
+
+        p1_type = " (AI)" if isinstance(self.player1, AI) else ""
+        p2_type = " (AI)" if isinstance(self.player2, AI) else ""
+        current_type = " (AI)" if isinstance(self.current_player, AI) else ""
+
+        player_info = f"{self.player1.name}{p1_type} vs {self.player2.name}{p2_type}"
+        text = f"{self.cfg.game.difficulty} rules ({self.cfg.board.size}x{self.cfg.board.size}) | {player_info}"
+
         if self.game_over:
-            self.screen.update(self.stones, f'{text} wins! R=replay M=menu ESC=quit')
+            self.screen.update(self.stones, f'{text} | {self.current_player.name}{current_type} wins! R=replay M=menu ESC=quit')
         else:
-            self.screen.update(self.stones, f'{text} to move | M=menu ESC=quit')
+            self.screen.update(self.stones, f'{text} | {self.current_player.name}{current_type} to move | M=menu ESC=quit')
