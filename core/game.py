@@ -141,7 +141,15 @@ class Game:
 
                 captures = self.rules.getCaptures(self.stones, move)
                 if captures:
+                    print(f"CAPTURE: Removing {len(captures)} stones: {[(c.tile, c.colour) for c in captures]}")
+                    print(f"CAPTURE: Board before removal: {len(self.stones.map)} stones")
                     self.stones.remove(captures)
+                    print(f"CAPTURE: Board after removal: {len(self.stones.map)} stones")
+                    print(f"CAPTURE: Remaining stones: {list(self.stones.map.keys())}")
+
+                    self._render()
+                    pygame.display.flip()
+                    pygame.display.update()
 
                 if self.rules.checkWin(self.stones, move):
                     self.game_over = True

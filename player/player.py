@@ -2,7 +2,7 @@ import pygame
 from ui.stones import Stones
 from core.utils import *
 from core.move import Move
-from core.minmax import *
+from core.minmax import Minimax
 from config import Config
 from abc import ABC, abstractmethod
 
@@ -42,26 +42,14 @@ class Human(Player):
 
 
 class AI(Player):
-    def doAction(self, stones, _, last_move) -> Move | None:
-        score, tile = minmax(self.cfg, stones, self.rules, self.colour, last_move, 2)
+	def __init__(self, cfg, rules, colour, name):
+		super().__init__(cfg, rules, colour, name)
+		self.minimax = Minimax(cfg, rules, colour, getOpposingColour(cfg, colour))
 
-        available_tiles = list(set(stones.allMoves) - set(stones.map))
-
-        if not available_tiles:
-            return None
-
-        if tile is None:
-            center = self.cfg.board.size // 2
-            center_tile = (center, center)
-            if center_tile in available_tiles:
-                tile = center_tile
-            else:
-                tile = available_tiles[0]
-
-        if tile not in available_tiles:
-            print(f"Warning: AI selected invalid tile {tile}, using fallback")
-            tile = available_tiles[0]
-
-        move = Move(tile, self.colour)
-        print(f"AI move: {tile}, score: {score}")
-        return move
+	def doAction(self, stones, _, last_move) -> Move | None:
+		score, tile = self.minimax.choose_move(stones, last_move, 5)
+		if tile == None:
+			return None
+		move = Move(tile, self.colour)
+		print(score)
+		return move

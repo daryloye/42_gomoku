@@ -29,18 +29,6 @@ def main():
     if hasattr(signal, 'SIGQUIT'):
         signal.signal(signal.SIGQUIT, signal_handler)
 
-    print("Running validation checks...")
-
-    try:
-        from tests.test_validate import validate_all_examples
-        if not validate_all_examples():
-            print("Validation failed. App will not start.")
-            sys.exit(1)
-        print("Validation passed. Starting game...")
-    except Exception as e:
-        print(f"Validation error: {e}")
-        sys.exit(1)
-
     pygame.init()
     pygame.display.set_caption("Gomoku")
 

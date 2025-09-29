@@ -36,7 +36,6 @@ def find_winning_lines(stones_list, color):
     return winning_lines
 
 def validate_pattern(pattern):
-    """Validate a pattern using same logic as test_validate.py"""
     winning_stones = pattern['stones']
     background_stones = pattern.get('background', [])
     all_stones = winning_stones + background_stones
