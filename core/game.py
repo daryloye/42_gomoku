@@ -1,6 +1,7 @@
 import pygame
 import time
 from ui.screen import Screen
+from ui.menu import Menu
 from ui.stones import Stones
 from player.player import Player
 from core.rules import Rules
@@ -11,8 +12,8 @@ from config import Config
 class Game:
     def __init__(self):
         self.cfg = Config()
-
         self.screen = Screen(self.cfg)
+        self.menu = Menu(self.cfg, self.screen.screen)
         self.rules = Rules(self.cfg)
 
         self.player1 = Player.make(
@@ -41,61 +42,12 @@ class Game:
         self.current_player = self.player1
         self.game_over = False
         self.last_move = None
-        self.player1_captures = 0
+        self.player1_captures = 0           # move this to player class?
         self.player2_captures = 0
 
 
-    def _show_exit_confirmation(self):
-        """Show confirmation popup before exiting the application."""
-        import pygame_menu
-
-        confirm_menu = pygame_menu.Menu('Confirm Exit', 400, 300,
-                                        theme=pygame_menu.themes.THEME_BLUE)
-
-        confirm_menu.add.label('Are you sure you want to quit?', font_size=20)
-        confirm_menu.add.vertical_margin(30)
-
-        def quit_app():
-            self.exit_type = "quit"
-            self.running = False
-            confirm_menu.disable()
-
-        def cancel_exit():
-            confirm_menu.disable()
-
-        confirm_menu.add.button('Yes, Quit', quit_app)
-        confirm_menu.add.button('Cancel', cancel_exit)
-
-        confirm_menu.mainloop(self.screen.screen)
-
-
-    def _show_menu_confirmation(self):
-        """Show confirmation popup before returning to main menu."""
-        import pygame_menu
-
-        confirm_menu = pygame_menu.Menu('Return to Menu?', 450, 350,
-                                        theme=pygame_menu.themes.THEME_BLUE)
-
-        confirm_menu.add.label('Return to main menu?', font_size=20)
-        confirm_menu.add.label('Current game progress will be lost.', font_size=16)
-        confirm_menu.add.vertical_margin(30)
-
-        def return_to_menu():
-            self.exit_type = "menu"
-            self.running = False
-            confirm_menu.disable()
-
-        def cancel_return():
-            confirm_menu.disable()
-
-        confirm_menu.add.button('Yes, Return to Menu', return_to_menu)
-        confirm_menu.add.button('Cancel', cancel_return)
-
-        confirm_menu.mainloop(self.screen.screen)
-
-
     def run(self):
-        clock = pygame.time.Clock()
+        clock = pygame.time.Clock()         # what is this for?
 
         while self.running:
             events = pygame.event.get()
@@ -110,19 +62,29 @@ class Game:
 
 
     def _handle_events(self, events):
+        def show_exit():
+            if self.menu.show_exit_confirmation():
+                self.exit_type = "quit"
+                self.running = False
+        
+        def show_menu():
+            if self.menu.show_menu_confirmation():
+                self.exit_type = "menu"
+                self.running = False
+
         for event in events:
             if event.type == pygame.QUIT:
-                self._show_exit_confirmation()
+                show_exit()
             elif event.type == pygame.KEYDOWN:
                 if event.key == pygame.K_m:
-                    self._show_menu_confirmation()
+                    show_menu()
                 elif self.game_over:
                     if event.key == pygame.K_r:
                         self._reset()
                     elif event.key == pygame.K_ESCAPE:
-                        self._show_exit_confirmation()
+                        show_exit()
                 elif event.key == pygame.K_ESCAPE:
-                    self._show_exit_confirmation()
+                    show_exit()
 
 
     def _handle_actions(self, events):
