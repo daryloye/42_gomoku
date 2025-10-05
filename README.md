@@ -2,6 +2,6 @@
 
 Yeah, well, your brain has to fry sometime
 
-## Windows
+## TODO
 
-Erm for testing purpose in windows just python main.py
+game rules and AI (black white)
