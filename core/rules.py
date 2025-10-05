@@ -11,15 +11,29 @@ class Rules:
     def validateMove(self, stones, move):
         if move.tile in stones.map:
             return False
+
+        if self.cfg.game.difficulty == "pente":
+            move_count = len(stones.map)
+            center = self.cfg.board.size // 2
+            x, y = move.tile
+
+            if move_count == 0:
+                if (x, y) != (center, center):
+                    return False
+
+            elif move_count == 1:
+                distance = max(abs(x - center), abs(y - center))
+                if distance < 3:
+                    return False
+
         return True
     
 
     def getCaptures(self, stones, move) -> list[Move]:
         """
-        Returns a list of opponent stones that should be captured after placing the given move.
-        Only works when capture rules are enabled.
+        Ninuki-renju and Pente: captures exactly 2 opponent stones flanked by your stones.
         """
-        if self.cfg.game.difficulty != "captures":
+        if self.cfg.game.difficulty not in ["ninuki", "pente"]:
             return []
 
         if move.tile not in stones.map:
@@ -38,42 +52,33 @@ class Rules:
         x, y = move.tile
 
         for dx, dy in directions:
-            # Check positive direction
-            captured_stones = []
-            nx, ny = x + dx, y + dy
+            nx1, ny1 = x + dx, y + dy
+            nx2, ny2 = x + 2*dx, y + 2*dy
+            nx3, ny3 = x + 3*dx, y + 3*dy
 
-            while (0 <= nx < self.cfg.board.size and
-                   0 <= ny < self.cfg.board.size and
-                   stones.map.get((nx, ny)) == opponent_color):
-                captured_stones.append(Move((nx, ny), opponent_color))
-                nx += dx
-                ny += dy
+            if (0 <= nx1 < self.cfg.board.size and 0 <= ny1 < self.cfg.board.size and
+                0 <= nx2 < self.cfg.board.size and 0 <= ny2 < self.cfg.board.size and
+                0 <= nx3 < self.cfg.board.size and 0 <= ny3 < self.cfg.board.size and
+                stones.map.get((nx1, ny1)) == opponent_color and
+                stones.map.get((nx2, ny2)) == opponent_color and
+                stones.map.get((nx3, ny3)) == move.colour):
+                captures.append(Move((nx1, ny1), opponent_color))
+                captures.append(Move((nx2, ny2), opponent_color))
 
-            if (captured_stones and
-                0 <= nx < self.cfg.board.size and
-                0 <= ny < self.cfg.board.size and
-                stones.map.get((nx, ny)) == move.colour):
-                captures.extend(captured_stones)
+            nx1, ny1 = x - dx, y - dy
+            nx2, ny2 = x - 2*dx, y - 2*dy
+            nx3, ny3 = x - 3*dx, y - 3*dy
 
-            captured_stones = []
-            nx, ny = x - dx, y - dy
-
-            while (0 <= nx < self.cfg.board.size and
-                   0 <= ny < self.cfg.board.size and
-                   stones.map.get((nx, ny)) == opponent_color):
-                captured_stones.append(Move((nx, ny), opponent_color))
-                nx -= dx
-                ny -= dy
-
-            if (captured_stones and
-                0 <= nx < self.cfg.board.size and
-                0 <= ny < self.cfg.board.size and
-                stones.map.get((nx, ny)) == move.colour):
-                captures.extend(captured_stones)
-
+            if (0 <= nx1 < self.cfg.board.size and 0 <= ny1 < self.cfg.board.size and
+                0 <= nx2 < self.cfg.board.size and 0 <= ny2 < self.cfg.board.size and
+                0 <= nx3 < self.cfg.board.size and 0 <= ny3 < self.cfg.board.size and
+                stones.map.get((nx1, ny1)) == opponent_color and
+                stones.map.get((nx2, ny2)) == opponent_color and
+                stones.map.get((nx3, ny3)) == move.colour):
+                captures.append(Move((nx1, ny1), opponent_color))
+                captures.append(Move((nx2, ny2), opponent_color))
 
         return captures
-
 
 
     def checkWin(self, stones, move):

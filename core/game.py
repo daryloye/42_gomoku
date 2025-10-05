@@ -144,14 +144,14 @@ class Game:
             else:
                 status = f"{self.current_player.name}{current_type} wins!"
 
-            if self.cfg.game.difficulty == "captures":
+            if self.cfg.game.difficulty in ["ninuki", "pente"]:
                 capture_display = f"Captures: {self.player1.name}={self.player1_captures} {self.player2.name}={self.player2_captures} | "
             else:
                 capture_display = ""
 
             line2 = f"{capture_display}{status} | R=replay M=menu ESC=quit"
         else:
-            if self.cfg.game.difficulty == "captures":
+            if self.cfg.game.difficulty in ["ninuki", "pente"]:
                 capture_display = f"Captures: {self.player1.name}={self.player1_captures} {self.player2.name}={self.player2_captures} | "
             else:
                 capture_display = ""

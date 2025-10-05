@@ -16,8 +16,8 @@ class Menu:
     def main_menu(self):
         menu = pygame_menu.Menu('Gomoku', self.cfg.display.width, self.cfg.display.height,
                                 theme=pygame_menu.themes.THEME_BLUE)
-        menu.add.selector('Rules : ', [('Standard', 'standard'), ('No-overline', 'no_overline'), ('With Captures', 'captures')], selector_id='difficulty')
-        menu.add.selector('Board Size : ', [('(19x19)', 19), ('(15x15)', 15), ('(5x5)', 5)], selector_id='board_size')
+        menu.add.selector('Rules : ', [('Standard', 'standard'), ('No-overline', 'no_overline'), ('Ninuki-renju', 'ninuki'), ('Pente', 'pente')], selector_id='difficulty')
+        menu.add.selector('Board Size : ', [('(19x19)', 19), ('(15x15)', 15), ('(13x13)', 13), ('(11x11)', 11), ('(9x9)', 9), ('(7x7)', 7), ('(5x5)', 5)], selector_id='board_size')
         menu.add.selector(f'P1 ({self.cfg.game.player1Name}) : ', [(f'{self.cfg.game.humanName}', 1), (f'{self.cfg.game.aiName}', 2)], selector_id='player1')
         menu.add.selector(f'P2 ({self.cfg.game.player2Name}) : ', [(f'{self.cfg.game.humanName}', 1), (f'{self.cfg.game.aiName}', 2)], selector_id='player2')
         menu.add.button('Play', menu.disable)
@@ -49,12 +49,22 @@ class Menu:
         rules_menu.add.vertical_margin(10)
 
         rules_menu.add.label('STANDARD RULES:', font_size=20)
-        rules_menu.add.label('5 or more stones in a row wins Traditional gomoku gameplay', font_size=16)
+        rules_menu.add.label('Win by placing 5 or more stones in a row (horizontal, vertical, or diagonal)', font_size=16)
         rules_menu.add.vertical_margin(15)
 
-        rules_menu.add.label('WITH CAPTURES:', font_size=20)
-        rules_menu.add.label('Same as standard, but you can capture opponent stones by flanking exactly 2 consecutive stones', font_size=16)
-        rules_menu.add.label('Pattern: [Your Stone][Opponent][Opponent][Your New Move] captures the 2 opponent stones', font_size=14)
+        rules_menu.add.label('NO-OVERLINE:', font_size=20)
+        rules_menu.add.label('Win by placing EXACTLY 5 stones in a row (6+ does not win)', font_size=16)
+        rules_menu.add.vertical_margin(15)
+
+        rules_menu.add.label('NINUKI-RENJU:', font_size=20)
+        rules_menu.add.label('Win by 5 in a row OR by capturing 10 opponent stones (5 pairs)', font_size=16)
+        rules_menu.add.label('Capture exactly 2 consecutive opponent stones by flanking them', font_size=14)
+        rules_menu.add.label('Pattern: [Your Stone][Opponent][Opponent][Your New Move]', font_size=14)
+        rules_menu.add.vertical_margin(15)
+
+        rules_menu.add.label('PENTE:', font_size=20)
+        rules_menu.add.label('Same rules as Ninuki-renju (5 in a row OR 10 captured stones)', font_size=16)
+        rules_menu.add.label('Capture exactly 2 consecutive opponent stones by flanking them', font_size=14)
         rules_menu.add.vertical_margin(15)
 
         rules_menu.add.button('Standard Rules Examples', self._show_standard_examples)
