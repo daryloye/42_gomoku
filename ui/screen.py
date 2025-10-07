@@ -10,10 +10,12 @@ class Screen:
         self.screen = pygame.display.set_mode((self.cfg.display.width, self.cfg.display.height))
 
 
-    def update(self, stones, text_lines):
+    def update(self, stones, text_lines, invalid_position=None):
         self.screen.fill(self.cfg.display.background)
         self._drawBoard()
         self._drawStones(stones)
+        if invalid_position:
+            self._drawInvalidMarker(invalid_position)
         if isinstance(text_lines, str):
             self._printText([text_lines])
         else:
@@ -55,6 +57,24 @@ class Screen:
         for tile, colour in stones.map.items():
             pygame.draw.circle(self.screen, colour, tile_to_coord(tile, self.cfg.board), radius)
             pygame.draw.circle(self.screen, getOpposingColour(self.cfg, colour), tile_to_coord(tile, self.cfg.board), radius, 1)
+
+
+    def _drawInvalidMarker(self, tile):
+        """Draw a red X marker at the invalid move position"""
+        coord = tile_to_coord(tile, self.cfg.board)
+        radius = self.cfg.stone.radius
+        red = (255, 0, 0)
+        thickness = 3
+
+        offset = radius * 0.6
+        pygame.draw.line(self.screen, red,
+                        (coord[0] - offset, coord[1] - offset),
+                        (coord[0] + offset, coord[1] + offset), thickness)
+        pygame.draw.line(self.screen, red,
+                        (coord[0] + offset, coord[1] - offset),
+                        (coord[0] - offset, coord[1] + offset), thickness)
+
+        pygame.draw.circle(self.screen, red, coord, radius, 2)
 
     
     def _printText(self, text_lines):

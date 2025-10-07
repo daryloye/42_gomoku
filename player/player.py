@@ -8,16 +8,19 @@ from abc import ABC, abstractmethod
 
 
 class Player(ABC):
-    """Multiple classes in a single script? hmmmmmmm"""
     def __init__(self, cfg, rules, colour, name):
         self.cfg = cfg
         self.rules = rules
         self.colour = colour
         self.name = name
+        self.captures = 0
 
     @abstractmethod
     def doAction(self, stones, events, last_move) -> Move | None:
         pass
+
+    def reset_captures(self):
+        self.captures = 0
 
     @classmethod
     def make(cls, cfg, rules, playerType, colour, name):

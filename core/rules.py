@@ -9,8 +9,11 @@ class Rules:
 
 
     def validateMove(self, stones, move):
+        """
+        If the move is valid, error_message is None.
+        """
         if move.tile in stones.map:
-            return False
+            return False, "Position already occupied!"
 
         if self.cfg.game.difficulty == "pente":
             move_count = len(stones.map)
@@ -19,14 +22,14 @@ class Rules:
 
             if move_count == 0:
                 if (x, y) != (center, center):
-                    return False
+                    return False, "First move must be at center!"
 
             elif move_count == 1:
                 distance = max(abs(x - center), abs(y - center))
                 if distance < 3:
-                    return False
+                    return False, "Second move must be at least 3 spaces from center!"
 
-        return True
+        return True, None
     
 
     def getCaptures(self, stones, move) -> list[Move]:
@@ -166,7 +169,46 @@ class Rules:
                     ny -= dy
                 else:
                     break
-            
+
             max_count = max(max_count, count)
- 
+
         return max_count
+
+
+    def check_four_in_a_row(self, stones, colour):
+        """
+        Find all empty positions where placing a stone would create 5 or more in a row (winning moves).
+        """
+        winning_moves = set()
+        directions = [(0, 1), (1, 0), (1, 1), (1, -1)]  # horizontal, vertical, diagonal, anti-diagonal
+
+        for x in range(self.cfg.board.size):
+            for y in range(self.cfg.board.size):
+                if (x, y) in stones.map:
+                    continue
+
+                for dx, dy in directions:
+                    count = 1
+
+                    nx, ny = x + dx, y + dy
+                    while 0 <= nx < self.cfg.board.size and 0 <= ny < self.cfg.board.size:
+                        if stones.map.get((nx, ny)) == colour:
+                            count += 1
+                            nx += dx
+                            ny += dy
+                        else:
+                            break
+
+                    nx, ny = x - dx, y - dy
+                    while 0 <= nx < self.cfg.board.size and 0 <= ny < self.cfg.board.size:
+                        if stones.map.get((nx, ny)) == colour:
+                            count += 1
+                            nx -= dx
+                            ny -= dy
+                        else:
+                            break
+
+                    if count >= 5:
+                        winning_moves.add((x, y))
+
+        return list(winning_moves)

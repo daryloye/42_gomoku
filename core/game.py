@@ -42,12 +42,19 @@ class Game:
         self.current_player = self.player1
         self.game_over = False
         self.last_move = None
-        self.player1_captures = 0           # move this to player class?
-        self.player2_captures = 0
+        self.player1.reset_captures()
+        self.player2.reset_captures()
+        self.invalid_move_message = None
+        self.invalid_move_time = 0
+        self.invalid_move_position = None
 
 
     def run(self):
-        clock = pygame.time.Clock()         # what is this for?
+        """
+        Setting clock for fps to reduce loops per second to reduce resources consumed
+        Secondly also attempting to use this to time the AI, not yet implemented
+        """
+        clock = pygame.time.Clock()
 
         while self.running:
             events = pygame.event.get()
@@ -56,7 +63,7 @@ class Game:
                 self._handle_actions(events)
             self._render()
 
-            clock.tick(60)
+            clock.tick(30)
 
         return self.exit_type
 
@@ -90,6 +97,10 @@ class Game:
     def _handle_actions(self, events):
         current_time = time.time()
 
+        if self.invalid_move_message and (current_time - self.invalid_move_time) > 2.0:
+            self.invalid_move_message = None
+            self.invalid_move_position = None
+
         from player.player import AI
         is_ai_player = isinstance(self.current_player, AI)
 
@@ -98,31 +109,36 @@ class Game:
 
         try:
             move = self.current_player.doAction(self.stones, events, self.last_move)
-            if move and self.rules.validateMove(self.stones, move):
-                self.last_move = move
-                self.stones.place(move)
-                self.last_move_time = current_time
+            if move:
+                is_valid, error_message = self.rules.validateMove(self.stones, move)
+                if is_valid:
+                    # Clear any previous error messages
+                    self.invalid_move_message = None
+                    self.invalid_move_position = None
 
-                captures = self.rules.getCaptures(self.stones, move)
-                if captures:
-                    self.stones.remove(captures)
+                    self.last_move = move
+                    self.stones.place(move)
+                    self.last_move_time = current_time
 
-                    if self.current_player == self.player1:
-                        self.player1_captures += len(captures)
+                    captures = self.rules.getCaptures(self.stones, move)
+                    if captures:
+                        self.stones.remove(captures)
+                        self.current_player.captures += len(captures)
+
+                        self._render()
+                        pygame.display.flip()
+                        pygame.display.update()
+
+                    if self.rules.checkWin(self.stones, move) or self.current_player.captures >= 10:
+                        self.game_over = True
                     else:
-                        self.player2_captures += len(captures)
-
-                    self._render()
-                    pygame.display.flip()
-                    pygame.display.update()
-
-                current_captures = self.player1_captures if self.current_player == self.player1 else self.player2_captures
-                if self.rules.checkWin(self.stones, move) or current_captures >= 10:
-                    self.game_over = True
+                        self.current_player = (
+                            self.player1 if self.current_player == self.player2 else self.player2
+                        )
                 else:
-                    self.current_player = (
-                        self.player1 if self.current_player == self.player2 else self.player2
-                    )
+                    self.invalid_move_message = error_message
+                    self.invalid_move_time = current_time
+                    self.invalid_move_position = move.tile
         except Exception as e:
             print(f"Error in player action: {e}")
             print(f"Current player: {type(self.current_player)} - {self.current_player.name}")
@@ -138,24 +154,27 @@ class Game:
         line1 = f"{self.cfg.game.difficulty} rules ({self.cfg.board.size}x{self.cfg.board.size}) | {self.player1.name}{p1_type} vs {self.player2.name}{p2_type}"
 
         if self.game_over:
-            current_captures = self.player1_captures if self.current_player == self.player1 else self.player2_captures
-            if current_captures >= 10:
+            if self.current_player.captures >= 10:
                 status = f"{self.current_player.name}{current_type} wins by capture!"
             else:
                 status = f"{self.current_player.name}{current_type} wins!"
 
             if self.cfg.game.difficulty in ["ninuki", "pente"]:
-                capture_display = f"Captures: {self.player1.name}={self.player1_captures} {self.player2.name}={self.player2_captures} | "
+                capture_display = f"Captures: {self.player1.name}={self.player1.captures} {self.player2.name}={self.player2.captures} | "
             else:
                 capture_display = ""
 
             line2 = f"{capture_display}{status} | R=replay M=menu ESC=quit"
         else:
             if self.cfg.game.difficulty in ["ninuki", "pente"]:
-                capture_display = f"Captures: {self.player1.name}={self.player1_captures} {self.player2.name}={self.player2_captures} | "
+                capture_display = f"Captures: {self.player1.name}={self.player1.captures} {self.player2.name}={self.player2.captures} | "
             else:
                 capture_display = ""
 
             line2 = f"{capture_display}{self.current_player.name}{current_type} to move | M=menu ESC=quit"
 
-        self.screen.update(self.stones, [line1, line2])
+        text_lines = [line1, line2]
+        if self.invalid_move_message:
+            text_lines.append(f"INVALID MOVE: {self.invalid_move_message}")
+
+        self.screen.update(self.stones, text_lines, self.invalid_move_position)

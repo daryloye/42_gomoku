@@ -1,4 +1,11 @@
+#!/usr/bin/env python3
+
+import sys
+sys.path.append('.')
+
 from ui.stones import Stones
+from config import Config
+from core.rules import Rules
 
 def test_four_in_a_row():
     cfg = Config()
@@ -35,3 +42,8 @@ def test_four_in_a_row():
     available_moves = rules.check_four_in_a_row(stones, colour)
     assert (12, 10) in available_moves
     assert len(available_moves) == 1
+
+    print("All tests passed!")
+
+if __name__ == "__main__":
+    test_four_in_a_row()

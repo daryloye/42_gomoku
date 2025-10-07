@@ -21,8 +21,12 @@ class Stones:
 		return new_stones
 
 
-	def place(self, move: Move):
-		self.map[move.tile] = move.colour
+	def place(self, move, colour=None):
+		"""Place a stone. Accepts either a Move object or (tile, colour) tuple."""
+		if isinstance(move, Move):
+			self.map[move.tile] = move.colour
+		else:
+			self.map[move] = colour
 
 
 	def remove(self, moves: list[Move]):
