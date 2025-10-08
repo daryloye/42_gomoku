@@ -10,23 +10,30 @@ class Screen:
         self.screen = pygame.display.set_mode((self.cfg.display.width, self.cfg.display.height))
 
 
-    def update(self, stones, text_lines, invalid_position=None):
-        self.screen.fill(self.cfg.display.background)
-        self._drawBoard()
-        self._drawStones(stones)
-        if invalid_position:
-            self._drawInvalidMarker(invalid_position)
-        if isinstance(text_lines, str):
-            self._printText([text_lines])
-        else:
-            self._printText(text_lines)
-        pygame.display.flip()
+    def update(self, stones, text_lines, invalid_position=None, winning_tiles=None):
+        try:
+            self.screen.fill(self.cfg.display.background)
+            self._drawBoard()
+            self._drawStones(stones)
+            if invalid_position:
+                self._drawInvalidMarker(invalid_position)
+            if winning_tiles:
+                self._drawWinningTiles(winning_tiles)
+            if isinstance(text_lines, str):
+                self._printText([text_lines])
+            else:
+                self._printText(text_lines)
+            pygame.display.flip()
+        except pygame.error as e:
+            print(f"Display update error: {e}")
+        except Exception as e:
+            print(f"Screen update error: {e}")
 
 
     def _drawBoard(self):
         board = self.cfg.board
 
-        board_rect = pygame.Rect(board.offset, board.offset, board.width, board.height)
+        board_rect = pygame.Rect(board.offsetLeft, board.offsetTop, board.width, board.height)
         pygame.draw.rect(self.screen, board.background, board_rect)
 
         # vertical lines
@@ -76,7 +83,15 @@ class Screen:
 
         pygame.draw.circle(self.screen, red, coord, radius, 2)
 
-    
+    def _drawWinningTiles(self, winning_tiles):
+        """Draw a green circle around the winning tiles"""
+        green = (0, 200, 0)
+        radius = self.cfg.stone.radius
+        for tile in winning_tiles:
+            coord = tile_to_coord(tile, self.cfg.board)
+            pygame.draw.circle(self.screen, green, coord, radius + 5, 4)
+
+
     def _printText(self, text_lines):
         font_size = 22 if len(text_lines) > 1 else 28
 
@@ -91,7 +106,7 @@ class Screen:
         line_height = font.get_height()
         total_height = line_height * len(text_lines)
 
-        start_y = (self.cfg.board.offset - total_height) / 2
+        start_y = (self.cfg.board.offsetTop - total_height) / 2
 
         for i, line in enumerate(text_lines):
             text_surface = font.render(line, True, self.cfg.colour.black)

@@ -1,4 +1,5 @@
 import pygame
+import random
 from ui.stones import Stones
 from core.utils import *
 from core.move import Move
@@ -24,11 +25,15 @@ class Player(ABC):
 
     @classmethod
     def make(cls, cfg, rules, playerType, colour, name):
-        mapping = {
-            cfg.game.humanName: Human,
-            cfg.game.aiName: AI
-        }
-        return mapping[playerType](cfg, rules, colour, name)
+        if playerType == cfg.game.humanName:
+            return Human(cfg, rules, colour, name)
+        elif playerType == cfg.game.aiName:
+            if cfg.game.aiType == 'random':
+                return RandomAI(cfg, rules, colour, name)
+            else:
+                return AI(cfg, rules, colour, name)
+        else:
+            raise ValueError(f"Unknown player type: {playerType}")
 
 
 class Human(Player):
@@ -50,9 +55,56 @@ class AI(Player):
 		self.minimax = Minimax(cfg, rules, colour, getOpposingColour(cfg, colour))
 
 	def doAction(self, stones, _, last_move) -> Move | None:
-		score, tile = self.minimax.choose_move(stones, last_move, 5)
-		if tile == None:
+		try:
+			score, tile = self.minimax.choose_move(stones, last_move, 5)
+			if tile == None:
+				return None
+			move = Move(tile, self.colour)
+			print(score)
+			return move
+		except MemoryError:
+			print("AI ran out of memory! Making random move...")
+			empty_tiles = [(x, y) for x in range(self.cfg.board.size)
+			               for y in range(self.cfg.board.size)
+			               if (x, y) not in stones.map]
+			if empty_tiles:
+				tile = random.choice(empty_tiles)
+				return Move(tile, self.colour)
 			return None
-		move = Move(tile, self.colour)
-		print(score)
-		return move
+		except RecursionError:
+			print("AI recursion error! Making random move...")
+			empty_tiles = [(x, y) for x in range(self.cfg.board.size)
+			               for y in range(self.cfg.board.size)
+			               if (x, y) not in stones.map]
+			if empty_tiles:
+				tile = random.choice(empty_tiles)
+				return Move(tile, self.colour)
+			return None
+		except Exception as e:
+			print(f"AI error: {e}. Making random move...")
+			empty_tiles = [(x, y) for x in range(self.cfg.board.size)
+			               for y in range(self.cfg.board.size)
+			               if (x, y) not in stones.map]
+			if empty_tiles:
+				tile = random.choice(empty_tiles)
+				return Move(tile, self.colour)
+			return None
+
+
+class RandomAI(Player):
+	def doAction(self, stones, _, last_move) -> Move | None:
+		try:
+			empty_tiles = []
+			for x in range(self.cfg.board.size):
+				for y in range(self.cfg.board.size):
+					tile = (x, y)
+					if tile not in stones.map:
+						empty_tiles.append(tile)
+
+			if empty_tiles:
+				tile = random.choice(empty_tiles)
+				return Move(tile, self.colour)
+			return None
+		except Exception as e:
+			print(f"RandomAI error: {e}")
+			return None

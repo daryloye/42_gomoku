@@ -18,7 +18,10 @@ class DisplayConfig:
 
 @dataclass
 class BoardConfig:
-	offset: int = 50
+	offsetTop: int = 80
+	offsetLeft: int = 40
+	offsetRight: int = 40
+	offsetBottom: int = 40
 	width: int = field(init=False)
 	height: int = field(init=False)
 	background: tuple[int, int, int] = (217,217,214)
@@ -41,6 +44,8 @@ class GameConfig:
 	player2Name: str = "WHITE"
 	humanName: str = "Human"
 	aiName: str = "AI"
+	aiType: str = "minmax"
+	noDoubleThrees: bool = field(init=False)
 
 
 @dataclass
@@ -52,5 +57,5 @@ class Config:
 	game: GameConfig = field(default_factory=GameConfig)
 
 	def __post_init__(self):
-		self.board.width = self.display.width - self.board.offset * 2
-		self.board.height = self.display.height - self.board.offset * 2
+		self.board.width = self.display.width - self.board.offsetLeft - self.board.offsetRight
+		self.board.height = self.display.height - self.board.offsetTop - self.board.offsetBottom

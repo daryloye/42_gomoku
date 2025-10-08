@@ -47,6 +47,12 @@ class Game:
         self.invalid_move_message = None
         self.invalid_move_time = 0
         self.invalid_move_position = None
+        self.winning_tiles = None
+
+    def _is_board_full(self):
+        """Check if the board is completely full"""
+        total_tiles = self.cfg.board.size * self.cfg.board.size
+        return len(self.stones.map) >= total_tiles
 
 
     def run(self):
@@ -57,13 +63,24 @@ class Game:
         clock = pygame.time.Clock()
 
         while self.running:
-            events = pygame.event.get()
-            self._handle_events(events)
-            if not self.game_over:
-                self._handle_actions(events)
-            self._render()
+            try:
+                events = pygame.event.get()
+                self._handle_events(events)
+                if not self.game_over:
+                    self._handle_actions(events)
+                self._render()
 
-            clock.tick(30)
+                clock.tick(30)
+            except MemoryError:
+                print("Memory error in game loop! Exiting game...")
+                self.running = False
+                self.exit_type = "quit"
+            except pygame.error as e:
+                print(f"Pygame error in game loop: {e}")
+                continue
+            except Exception as e:
+                print(f"Unexpected error in game loop: {e}")
+                continue
 
         return self.exit_type
 
@@ -129,8 +146,34 @@ class Game:
                         pygame.display.flip()
                         pygame.display.update()
 
-                    if self.rules.checkWin(self.stones, move) or self.current_player.captures >= 10:
+                    if self.rules.checkWin(self.stones, move):
+                        self.winning_tiles = self.rules.getWinningTiles(self.stones, move)
+
+                        opponent = self.player2 if self.current_player == self.player1 else self.player1
+                        can_break = self.rules.canOpponentBreakLine(self.stones, self.winning_tiles, opponent.colour)
+
+                        if can_break:
+                            opponent_wins = self.rules.wouldOpponentWinByCapture(
+                                self.stones, self.winning_tiles, opponent.colour, opponent.captures
+                            )
+                            if opponent_wins:
+                                self.current_player = opponent
+                                self.game_over = True
+                                self.winning_tiles = None
+                            else:
+                                self.winning_tiles = None
+                        else:
+                            self.game_over = True
+                    elif self.current_player.captures >= 10:
                         self.game_over = True
+                        self.winning_tiles = None
+                    elif self._is_board_full():
+                        self.invalid_move_message = "Draw! Board full. Resetting..."
+                        self.invalid_move_time = current_time
+                        self._render()
+                        pygame.display.flip()
+                        pygame.time.wait(2000)
+                        self._reset()
                     else:
                         self.current_player = (
                             self.player1 if self.current_player == self.player2 else self.player2
@@ -139,42 +182,58 @@ class Game:
                     self.invalid_move_message = error_message
                     self.invalid_move_time = current_time
                     self.invalid_move_position = move.tile
+        except MemoryError:
+            print("Memory error during player action! Try a smaller board.")
+            self.invalid_move_message = "Memory error - try smaller board"
+            self.invalid_move_time = current_time
+        except RecursionError:
+            print("Recursion limit reached in AI! Skipping this move.")
+            self.invalid_move_message = "AI calculation error"
+            self.invalid_move_time = current_time
         except Exception as e:
             print(f"Error in player action: {e}")
             print(f"Current player: {type(self.current_player)} - {self.current_player.name}")
+            self.invalid_move_message = "Unexpected error occurred"
+            self.invalid_move_time = current_time
 
 
     def _render(self):
-        from player.player import AI
+        try:
+            from player.player import AI
 
-        p1_type = " (AI)" if isinstance(self.player1, AI) else ""
-        p2_type = " (AI)" if isinstance(self.player2, AI) else ""
-        current_type = " (AI)" if isinstance(self.current_player, AI) else ""
+            p1_type = " (AI)" if isinstance(self.player1, AI) else ""
+            p2_type = " (AI)" if isinstance(self.player2, AI) else ""
+            current_type = " (AI)" if isinstance(self.current_player, AI) else ""
 
-        line1 = f"{self.cfg.game.difficulty} rules ({self.cfg.board.size}x{self.cfg.board.size}) | {self.player1.name}{p1_type} vs {self.player2.name}{p2_type}"
+            line1 = f"{self.cfg.game.difficulty} rules ({self.cfg.board.size}x{self.cfg.board.size}) | {self.player1.name}{p1_type} vs {self.player2.name}{p2_type}"
 
-        if self.game_over:
-            if self.current_player.captures >= 10:
-                status = f"{self.current_player.name}{current_type} wins by capture!"
+            if self.game_over:
+                if self.current_player.captures >= 10:
+                    status = f"{self.current_player.name}{current_type} wins by capture!"
+                else:
+                    status = f"{self.current_player.name}{current_type} wins!"
+
+                if self.cfg.game.difficulty in ["ninuki", "pente"]:
+                    capture_display = f"Captures: {self.player1.name}={self.player1.captures} {self.player2.name}={self.player2.captures} | "
+                else:
+                    capture_display = ""
+
+                line2 = f"{capture_display}{status} | R=replay M=menu ESC=quit"
             else:
-                status = f"{self.current_player.name}{current_type} wins!"
+                if self.cfg.game.difficulty in ["ninuki", "pente"]:
+                    capture_display = f"Captures: {self.player1.name}={self.player1.captures} {self.player2.name}={self.player2.captures} | "
+                else:
+                    capture_display = ""
 
-            if self.cfg.game.difficulty in ["ninuki", "pente"]:
-                capture_display = f"Captures: {self.player1.name}={self.player1.captures} {self.player2.name}={self.player2.captures} | "
-            else:
-                capture_display = ""
+                if self.invalid_move_message:
+                    line2 = f"INVALID: {self.invalid_move_message} | M=menu ESC=quit"
+                else:
+                    line2 = f"{capture_display}{self.current_player.name}{current_type} to move | M=menu ESC=quit"
 
-            line2 = f"{capture_display}{status} | R=replay M=menu ESC=quit"
-        else:
-            if self.cfg.game.difficulty in ["ninuki", "pente"]:
-                capture_display = f"Captures: {self.player1.name}={self.player1.captures} {self.player2.name}={self.player2.captures} | "
-            else:
-                capture_display = ""
+            text_lines = [line1, line2]
 
-            line2 = f"{capture_display}{self.current_player.name}{current_type} to move | M=menu ESC=quit"
-
-        text_lines = [line1, line2]
-        if self.invalid_move_message:
-            text_lines.append(f"INVALID MOVE: {self.invalid_move_message}")
-
-        self.screen.update(self.stones, text_lines, self.invalid_move_position)
+            self.screen.update(self.stones, text_lines, self.invalid_move_position, self.winning_tiles)
+        except pygame.error as e:
+            print(f"Pygame rendering error: {e}")
+        except Exception as e:
+            print(f"Rendering error: {e}")

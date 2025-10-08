@@ -23,14 +23,18 @@ def signal_handler(signum, frame):
 
 
 def main():
-    signal.signal(signal.SIGINT, signal_handler) 
+    signal.signal(signal.SIGINT, signal_handler)
     signal.signal(signal.SIGTERM, signal_handler)
 
     if hasattr(signal, 'SIGQUIT'):
         signal.signal(signal.SIGQUIT, signal_handler)
 
-    pygame.init()
-    pygame.display.set_caption("Gomoku")
+    try:
+        pygame.init()
+        pygame.display.set_caption("Gomoku")
+    except Exception as e:
+        print(f"Failed to initialize pygame: {e}")
+        return
 
     while True:
         try:
@@ -39,17 +43,28 @@ def main():
             if result == "quit":
                 break
         except KeyboardInterrupt:
-            # Handle Ctrl+C during game execution
             print("\nGame interrupted. Exiting...")
             break
         except EOFError:
-            # Handle Ctrl+D (EOF)
             print("\nReceived EOF (Ctrl+D). Exiting...")
             break
-        except Exception:
-            break
+        except MemoryError:
+            print("\nOut of memory! Try a smaller board size or close other applications.")
+            print("Returning to menu...")
+            continue
+        except pygame.error as e:
+            print(f"\nPygame error occurred: {e}")
+            print("Attempting to continue...")
+            continue
+        except Exception as e:
+            print(f"\nUnexpected error: {e}")
+            print("Returning to menu...")
+            continue
 
-    pygame.quit()
+    try:
+        pygame.quit()
+    except Exception:
+        pass
 
 
 if __name__ == "__main__":

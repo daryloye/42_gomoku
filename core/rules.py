@@ -9,9 +9,7 @@ class Rules:
 
 
     def validateMove(self, stones, move):
-        """
-        If the move is valid, error_message is None.
-        """
+        """If the move is valid, error_message is None"""
         if move.tile in stones.map:
             return False, "Position already occupied!"
 
@@ -29,6 +27,14 @@ class Rules:
                 if distance < 3:
                     return False, "Second move must be at least 3 spaces from center!"
 
+        if self.cfg.game.noDoubleThrees:
+            stones.map[move.tile] = move.colour
+            free_three_count = self.countFreeThrees(stones, move)
+            del stones.map[move.tile]
+
+            if free_three_count >= 2:
+                return False, "Cannot create double free-threes!"
+
         return True, None
     
 
@@ -42,6 +48,11 @@ class Rules:
         if move.tile not in stones.map:
             return []
 
+        return self._calculateCaptures(stones, move)
+
+
+    def _calculateCaptures(self, stones, move) -> list[Move]:
+        """Calculate captures for a move (helper method that doesn't check if stone is placed)"""
         captures = []
 
         if isinstance(move.colour, str):
@@ -91,7 +102,136 @@ class Rules:
             row_length = self._getRowLength(stones, move)
             return row_length >= 5
 
-    
+
+    def getWinningTiles(self, stones, move):
+        """Returns the list of tiles that form the winning line, or None if no win"""
+        if self.cfg.game.difficulty == "no_overline":
+            if not self._checkWinNoOverline(stones, move):
+                return None
+            return self._getWinningTilesForMove(stones, move, exactly=5)
+        else:
+            row_length = self._getRowLength(stones, move)
+            if row_length < 5:
+                return None
+            return self._getWinningTilesForMove(stones, move)
+
+    def canOpponentBreakLine(self, stones, winning_tiles, opponent_colour):
+        """Check if opponent can break the winning line by capturing a pair from it"""
+        if self.cfg.game.difficulty not in ["ninuki", "pente"]:
+            return False
+
+        if not winning_tiles or len(winning_tiles) < 2:
+            return False
+
+        for x in range(self.cfg.board.size):
+            for y in range(self.cfg.board.size):
+                tile = (x, y)
+                if tile in stones.map:
+                    continue
+
+                test_move = Move(tile, opponent_colour)
+                captures = self._calculateCaptures(stones, test_move)
+
+                for capture in captures:
+                    if capture.tile in winning_tiles:
+                        return True
+
+        return False
+
+    def wouldOpponentWinByCapture(self, stones, winning_tiles, opponent_colour, opponent_captures):
+        """Check if opponent would win by capture when breaking the line"""
+        if self.cfg.game.difficulty not in ["ninuki", "pente"]:
+            return False
+
+        if opponent_captures < 8:
+            return False
+
+        if not winning_tiles or len(winning_tiles) < 2:
+            return False
+
+        for x in range(self.cfg.board.size):
+            for y in range(self.cfg.board.size):
+                tile = (x, y)
+                if tile in stones.map:
+                    continue
+
+                test_move = Move(tile, opponent_colour)
+                captures = self._calculateCaptures(stones, test_move)
+
+                captures_from_line = 0
+                for capture in captures:
+                    if capture.tile in winning_tiles:
+                        captures_from_line += 1
+
+                if captures_from_line > 0 and opponent_captures + captures_from_line >= 10:
+                    return True
+
+        return False
+
+    def _isFreeThree(self, stones, move, direction):
+        """Check if a move creates a free-three in a specific direction"""
+        dx, dy = direction
+        x, y = move.tile
+        colour = move.colour
+
+        count_forward = 0
+        count_backward = 0
+
+        nx, ny = x + dx, y + dy
+        while 0 <= nx < self.cfg.board.size and 0 <= ny < self.cfg.board.size:
+            if stones.map.get((nx, ny)) == colour:
+                count_forward += 1
+                nx += dx
+                ny += dy
+            else:
+                break
+
+        nx, ny = x - dx, y - dy
+        while 0 <= nx < self.cfg.board.size and 0 <= ny < self.cfg.board.size:
+            if stones.map.get((nx, ny)) == colour:
+                count_backward += 1
+                nx -= dx
+                ny -= dy
+            else:
+                break
+
+        total_count = count_forward + count_backward + 1
+
+        if total_count != 3:
+            return False
+
+        forward_end_x = x + (count_forward + 1) * dx
+        forward_end_y = y + (count_forward + 1) * dy
+        backward_end_x = x - (count_backward + 1) * dx
+        backward_end_y = y - (count_backward + 1) * dy
+
+        forward_empty = (
+            0 <= forward_end_x < self.cfg.board.size and
+            0 <= forward_end_y < self.cfg.board.size and
+            (forward_end_x, forward_end_y) not in stones.map
+        )
+
+        backward_empty = (
+            0 <= backward_end_x < self.cfg.board.size and
+            0 <= backward_end_y < self.cfg.board.size and
+            (backward_end_x, backward_end_y) not in stones.map
+        )
+
+        return forward_empty and backward_empty
+
+
+    def countFreeThrees(self, stones, move):
+        """Count the number of free-three patterns created by a move"""
+        directions = [(0, 1), (1, 0), (1, 1), (1, -1)]
+        count = 0
+
+        for direction in directions:
+            if self._isFreeThree(stones, move, direction):
+                count += 1
+
+        return count
+
+
     def evaluate(self, stones, ai_colour, move):
         if move == None:
             return 0
@@ -136,6 +276,46 @@ class Rules:
         row_length = self._getRowLength(stones, move)
         return row_length == 5
 
+    def _getWinningTilesForMove(self, stones, move, exactly=None):
+        """Get all tiles that form the winning line. If exactly is set, only return lines of that exact length."""
+        directions = [
+            (0, 1),
+            (1, 0),
+            (1, 1),
+            (1, -1),
+        ]
+
+        x, y = move.tile
+
+        for dx, dy in directions:
+            tiles_in_line = [move.tile]
+
+            nx, ny = x + dx, y + dy
+            while 0 <= nx < self.cfg.board.size and 0 <= ny < self.cfg.board.size:
+                if stones.map.get((nx, ny)) == move.colour:
+                    tiles_in_line.append((nx, ny))
+                    nx += dx
+                    ny += dy
+                else:
+                    break
+
+            nx, ny = x - dx, y - dy
+            while 0 <= nx < self.cfg.board.size and 0 <= ny < self.cfg.board.size:
+                if stones.map.get((nx, ny)) == move.colour:
+                    tiles_in_line.append((nx, ny))
+                    nx -= dx
+                    ny -= dy
+                else:
+                    break
+
+            if exactly is not None:
+                if len(tiles_in_line) == exactly:
+                    return tiles_in_line
+            else:
+                if len(tiles_in_line) >= 5:
+                    return tiles_in_line
+
+        return None
 
     # TODO: cache this
     def _getRowLength(self, stones, move):

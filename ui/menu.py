@@ -14,24 +14,32 @@ class Menu:
 
 
     def main_menu(self):
-        menu = pygame_menu.Menu('Gomoku', self.cfg.display.width, self.cfg.display.height,
-                                theme=pygame_menu.themes.THEME_BLUE)
-        menu.add.selector('Rules : ', [('Standard', 'standard'), ('No-overline', 'no_overline'), ('Ninuki-renju', 'ninuki'), ('Pente', 'pente')], selector_id='difficulty')
-        menu.add.selector('Board Size : ', [('(19x19)', 19), ('(15x15)', 15), ('(13x13)', 13), ('(11x11)', 11), ('(9x9)', 9), ('(7x7)', 7), ('(5x5)', 5)], selector_id='board_size')
-        menu.add.selector(f'P1 ({self.cfg.game.player1Name}) : ', [(f'{self.cfg.game.humanName}', 1), (f'{self.cfg.game.aiName}', 2)], selector_id='player1')
-        menu.add.selector(f'P2 ({self.cfg.game.player2Name}) : ', [(f'{self.cfg.game.humanName}', 1), (f'{self.cfg.game.aiName}', 2)], selector_id='player2')
-        menu.add.button('Play', menu.disable)
-        menu.add.button('Explain Rules', self._show_rules)
-        menu.add.button('Quit', pygame_menu.events.EXIT)
-        
-        menu.mainloop(self.screen)
+        try:
+            menu = pygame_menu.Menu('Gomoku', self.cfg.display.width, self.cfg.display.height,
+                                    theme=pygame_menu.themes.THEME_BLUE)
+            menu.add.selector('Rules : ', [('Standard', 'standard'), ('No-overline', 'no_overline'), ('Ninuki-renju', 'ninuki'), ('Pente', 'pente')], selector_id='difficulty')
+            menu.add.selector('Board Size : ', [('(19x19)', 19), ('(15x15)', 15), ('(13x13)', 13), ('(11x11)', 11), ('(9x9)', 9), ('(7x7)', 7), ('(5x5)', 5)], selector_id='board_size')
+            menu.add.selector(f'P1 ({self.cfg.game.player1Name}) : ', [(f'{self.cfg.game.humanName}', 1), (f'{self.cfg.game.aiName}', 2)], selector_id='player1')
+            menu.add.selector(f'P2 ({self.cfg.game.player2Name}) : ', [(f'{self.cfg.game.humanName}', 1), (f'{self.cfg.game.aiName}', 2)], selector_id='player2')
+            menu.add.selector('AI Type : ', [('Minmax', 'minmax'), ('Random', 'random')], selector_id='ai_type')
+            menu.add.selector('No Double-Threes : ', [('Off', False), ('On', True)], selector_id='no_double_threes')
+            menu.add.button('Play', menu.disable)
+            menu.add.button('Explain Rules', self._show_rules)
+            menu.add.button('Quit', pygame_menu.events.EXIT)
 
-        selection = menu.get_input_data()
+            menu.mainloop(self.screen)
 
-        self.cfg.board.size = selection['board_size'][0][1]
-        self.cfg.game.difficulty = selection['difficulty'][0][1]
-        self.cfg.game.player1Type = selection['player1'][0][0]
-        self.cfg.game.player2Type = selection['player2'][0][0]
+            selection = menu.get_input_data()
+
+            self.cfg.board.size = selection['board_size'][0][1]
+            self.cfg.game.difficulty = selection['difficulty'][0][1]
+            self.cfg.game.player1Type = selection['player1'][0][0]
+            self.cfg.game.player2Type = selection['player2'][0][0]
+            self.cfg.game.aiType = selection['ai_type'][0][1]
+            self.cfg.game.noDoubleThrees = selection['no_double_threes'][0][1]
+        except Exception as e:
+            print(f"Menu error: {e}")
+            raise
 
 
     def _show_rules(self):
