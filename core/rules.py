@@ -115,6 +115,7 @@ class Rules:
                 return None
             return self._getWinningTilesForMove(stones, move)
 
+
     def canOpponentBreakLine(self, stones, winning_tiles, opponent_colour):
         """Check if opponent can break the winning line by capturing a pair from it"""
         if self.cfg.game.difficulty not in ["ninuki", "pente"]:
@@ -137,6 +138,7 @@ class Rules:
                         return True
 
         return False
+
 
     def wouldOpponentWinByCapture(self, stones, winning_tiles, opponent_colour, opponent_captures):
         """Check if opponent would win by capture when breaking the line"""
@@ -168,42 +170,54 @@ class Rules:
 
         return False
 
+
     def _isFreeThree(self, stones, move, direction):
-        """Check if a move creates a free-three in a specific direction"""
+        """
+        A free-three is a pattern of 3 stones (including gaps) that can develop into a four
+        """
         dx, dy = direction
         x, y = move.tile
         colour = move.colour
 
-        count_forward = 0
-        count_backward = 0
+        positions = []
 
-        nx, ny = x + dx, y + dy
-        while 0 <= nx < self.cfg.board.size and 0 <= ny < self.cfg.board.size:
-            if stones.map.get((nx, ny)) == colour:
-                count_forward += 1
-                nx += dx
-                ny += dy
-            else:
+        for i in range(1, 6):
+            nx, ny = x + i * dx, y + i * dy
+            if not (0 <= nx < self.cfg.board.size and 0 <= ny < self.cfg.board.size):
+                break
+            stone_colour = stones.map.get((nx, ny))
+            if stone_colour == colour:
+                positions.append(i)
+            elif stone_colour is not None:
+                # Opponent stone blocks this direction
                 break
 
-        nx, ny = x - dx, y - dy
-        while 0 <= nx < self.cfg.board.size and 0 <= ny < self.cfg.board.size:
-            if stones.map.get((nx, ny)) == colour:
-                count_backward += 1
-                nx -= dx
-                ny -= dy
-            else:
+        backward_positions = []
+        for i in range(1, 6):
+            nx, ny = x - i * dx, y - i * dy
+            if not (0 <= nx < self.cfg.board.size and 0 <= ny < self.cfg.board.size):
+                break
+            stone_colour = stones.map.get((nx, ny))
+            if stone_colour == colour:
+                backward_positions.append(-i)
+            elif stone_colour is not None:
+                # Opponent stone blocks this direction
                 break
 
-        total_count = count_forward + count_backward + 1
+        all_positions = sorted(backward_positions + [0] + positions)
 
-        if total_count != 3:
+        if len(all_positions) != 3:
             return False
 
-        forward_end_x = x + (count_forward + 1) * dx
-        forward_end_y = y + (count_forward + 1) * dy
-        backward_end_x = x - (count_backward + 1) * dx
-        backward_end_y = y - (count_backward + 1) * dy
+        span = all_positions[-1] - all_positions[0]
+        if span > 4:
+            return False
+
+        forward_end_x = x + (all_positions[-1] + 1) * dx
+        forward_end_y = y + (all_positions[-1] + 1) * dy
+
+        backward_end_x = x + (all_positions[0] - 1) * dx
+        backward_end_y = y + (all_positions[0] - 1) * dy
 
         forward_empty = (
             0 <= forward_end_x < self.cfg.board.size and
