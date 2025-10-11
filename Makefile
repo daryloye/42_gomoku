@@ -9,6 +9,8 @@ VENV_STAMP = $(VENV_DIR)/.stamp
 SRCS = main.py \
        core/game.py \
        core/rules.py \
+       core/move_rules.py \
+       core/win_rules.py \
        core/move.py \
        core/utils.py \
        core/minmax.py \
