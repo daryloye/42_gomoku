@@ -48,6 +48,8 @@ class Game:
         self.invalid_move_time = 0
         self.invalid_move_position = None
         self.winning_tiles = None
+        self.ai_thinking_time = None
+        self.ai_move_start_time = None
 
     def _is_board_full(self):
         """Check if the board is completely full"""
@@ -58,7 +60,7 @@ class Game:
     def run(self):
         """
         Setting clock for fps to reduce loops per second to reduce resources consumed
-        Secondly also attempting to use this to time the AI, not yet implemented
+        AI thinking time is tracked and displayed on screen
         """
         clock = pygame.time.Clock()
 
@@ -125,7 +127,15 @@ class Game:
             return
 
         try:
+            if is_ai_player:
+                self.ai_move_start_time = current_time
+
             move = self.current_player.doAction(self.stones, events, self.last_move)
+
+            if is_ai_player and move and self.ai_move_start_time:
+                self.ai_thinking_time = current_time - self.ai_move_start_time
+                self.ai_move_start_time = None
+
             if move:
                 is_valid, error_message = self.rules.validateMove(self.stones, move)
                 if is_valid:
@@ -207,6 +217,10 @@ class Game:
 
             line1 = f"{self.cfg.game.difficulty} rules ({self.cfg.board.size}x{self.cfg.board.size}) | {self.player1.name}{p1_type} vs {self.player2.name}{p2_type}"
 
+            ai_timer_display = ""
+            if self.ai_thinking_time is not None:
+                ai_timer_display = f" | AI time: {self.ai_thinking_time:.2f}s"
+
             if self.game_over:
                 if self.current_player.captures >= 10:
                     status = f"{self.current_player.name}{current_type} wins by capture!"
@@ -218,7 +232,7 @@ class Game:
                 else:
                     capture_display = ""
 
-                line2 = f"{capture_display}{status} | R=replay M=menu ESC=quit"
+                line2 = f"{capture_display}{status}{ai_timer_display} | R=replay M=menu ESC=quit"
             else:
                 if self.cfg.game.difficulty in ["ninuki", "pente"]:
                     capture_display = f"Captures: {self.player1.name}={self.player1.captures} {self.player2.name}={self.player2.captures} | "
@@ -226,9 +240,9 @@ class Game:
                     capture_display = ""
 
                 if self.invalid_move_message:
-                    line2 = f"INVALID: {self.invalid_move_message} | M=menu ESC=quit"
+                    line2 = f"INVALID: {self.invalid_move_message}{ai_timer_display} | M=menu ESC=quit"
                 else:
-                    line2 = f"{capture_display}{self.current_player.name}{current_type} to move | M=menu ESC=quit"
+                    line2 = f"{capture_display}{self.current_player.name}{current_type} to move{ai_timer_display} | M=menu ESC=quit"
 
             text_lines = [line1, line2]
 
