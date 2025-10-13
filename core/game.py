@@ -6,6 +6,7 @@ from ui.stones import Stones
 from player.player import Player
 from core.rules import Rules
 from core.move import Move
+from core.suggestions import Suggestions
 from config import Config
 
 
@@ -15,6 +16,7 @@ class Game:
         self.screen = Screen(self.cfg)
         self.menu = Menu(self.cfg, self.screen.screen)
         self.rules = Rules(self.cfg)
+        self.suggestions_helper = Suggestions(self.cfg)
 
         self.player1 = Player.make(
             self.cfg,
@@ -35,6 +37,7 @@ class Game:
         self.exit_type = None
         self.ai_move_delay = 1.0
         self.last_move_time = 0
+        self.show_suggestions = False
 
 
     def _reset(self):
@@ -104,6 +107,8 @@ class Game:
             elif event.type == pygame.KEYDOWN:
                 if event.key == pygame.K_m:
                     show_menu()
+                elif event.key == pygame.K_s:
+                    self.show_suggestions = not self.show_suggestions
                 elif self.game_over:
                     if event.key == pygame.K_r:
                         self._reset()
@@ -240,13 +245,18 @@ class Game:
                     capture_display = ""
 
                 if self.invalid_move_message:
-                    line2 = f"INVALID: {self.invalid_move_message}{ai_timer_display} | M=menu ESC=quit"
+                    line2 = f"INVALID: {self.invalid_move_message}{ai_timer_display} | S=suggestions M=menu ESC=quit"
                 else:
-                    line2 = f"{capture_display}{self.current_player.name}{current_type} to move{ai_timer_display} | M=menu ESC=quit"
+                    suggestions_status = "ON" if self.show_suggestions else "OFF"
+                    line2 = f"{capture_display}{self.current_player.name}{current_type} to move{ai_timer_display} | S=suggestions({suggestions_status}) M=menu ESC=quit"
 
             text_lines = [line1, line2]
 
-            self.screen.update(self.stones, text_lines, self.invalid_move_position, self.winning_tiles)
+            suggestions = None
+            if self.show_suggestions and not self.game_over:
+                suggestions = self.suggestions_helper.find_suggestions(self.stones, self.current_player.colour)
+
+            self.screen.update(self.stones, text_lines, self.invalid_move_position, self.winning_tiles, suggestions)
         except pygame.error as e:
             print(f"Pygame rendering error: {e}")
         except Exception as e:

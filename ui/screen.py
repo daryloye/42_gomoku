@@ -10,10 +10,12 @@ class Screen:
         self.screen = pygame.display.set_mode((self.cfg.display.width, self.cfg.display.height))
 
 
-    def update(self, stones, text_lines, invalid_position=None, winning_tiles=None):
+    def update(self, stones, text_lines, invalid_position=None, winning_tiles=None, suggestions=None):
         try:
             self.screen.fill(self.cfg.display.background)
             self._drawBoard()
+            if suggestions:
+                self._drawSuggestions(suggestions)
             self._drawStones(stones)
             if invalid_position:
                 self._drawInvalidMarker(invalid_position)
@@ -90,6 +92,43 @@ class Screen:
         for tile in winning_tiles:
             coord = tile_to_coord(tile, self.cfg.board)
             pygame.draw.circle(self.screen, green, coord, radius + 5, 4)
+
+    def _drawSuggestions(self, suggestions):
+        """
+        Draw suggestion highlights for positions that would create N-in-a-row.
+        """
+        styles = {
+            2: {'color': (173, 216, 230), 'radius_offset': 3, 'thickness': 2},
+            3: {'color': (0, 255, 255), 'radius_offset': 5, 'thickness': 2},
+            4: {'color': (255, 165, 0), 'radius_offset': 7, 'thickness': 3},
+            5: {'color': (255, 0, 255), 'radius_offset': 9, 'thickness': 3},
+        }
+
+        base_radius = self.cfg.stone.radius
+
+        for length in sorted(styles.keys()):
+            if length in suggestions:
+                style = styles[length]
+                for tile in suggestions[length]:
+                    coord = tile_to_coord(tile, self.cfg.board)
+
+                    center_radius = 4 if length <= 3 else 6
+                    pygame.draw.circle(self.screen, style['color'], coord, center_radius)
+
+                    pygame.draw.circle(
+                        self.screen,
+                        style['color'],
+                        coord,
+                        base_radius + style['radius_offset'],
+                        style['thickness']
+                    )
+
+        for length, tiles in suggestions.items():
+            if length > 5:
+                for tile in tiles:
+                    coord = tile_to_coord(tile, self.cfg.board)
+                    pygame.draw.circle(self.screen, (255, 0, 255), coord, 6)
+                    pygame.draw.circle(self.screen, (255, 0, 255), coord, base_radius + 9, 3)
 
 
     def _printText(self, text_lines):
