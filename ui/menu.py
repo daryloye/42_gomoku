@@ -15,7 +15,7 @@ class Menu:
         try:
             menu = pygame_menu.Menu('Gomoku', self.cfg.display.width, self.cfg.display.height,
                                     theme=pygame_menu.themes.THEME_BLUE)
-            menu.add.selector('Rules : ', [('Standard', 'standard'), ('No-overline', 'no_overline'), ('Ninuki-renju', 'ninuki'), ('Pente', 'pente')], selector_id='difficulty')
+            menu.add.selector('Rules : ', [('Standard', 'standard'), ('Pro', 'pro'), ('No-overline', 'no_overline'), ('Ninuki-renju', 'ninuki'), ('Pente', 'pente')], selector_id='difficulty')
             menu.add.selector('Board Size : ', [('(19x19)', 19), ('(15x15)', 15), ('(13x13)', 13), ('(11x11)', 11), ('(9x9)', 9), ('(7x7)', 7), ('(5x5)', 5)], selector_id='board_size')
             menu.add.selector(f'P1 ({self.cfg.game.player1Name}) : ', [(f'{self.cfg.game.humanName}', 1), (f'{self.cfg.game.aiName}', 2)], selector_id='player1')
             menu.add.selector(f'P2 ({self.cfg.game.player2Name}) : ', [(f'{self.cfg.game.humanName}', 1), (f'{self.cfg.game.aiName}', 2)], selector_id='player2')
@@ -54,6 +54,12 @@ class Menu:
         rules_menu.add.label('GAME MODES:', font_size=24)
         rules_menu.add.vertical_margin(10)
 
+        rules_menu.add.label('PRO (RENJU):', font_size=20)
+        rules_menu.add.label('Competitive rules with restrictions for Black only:', font_size=16)
+        rules_menu.add.label('- Black wins with exactly 5 (no overline)', font_size=14)
+        rules_menu.add.label('- Black cannot make double-three, double-four, or overline (6+)', font_size=14)
+        rules_menu.add.label('- White has no restrictions and can make overline', font_size=14)
+        rules_menu.add.vertical_margin(15)
 
         rules_menu.add.label('NO-OVERLINE:', font_size=20)
         rules_menu.add.label('Win by placing EXACTLY 5 stones in a row (6+ does not win)', font_size=16)

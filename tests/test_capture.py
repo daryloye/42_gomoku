@@ -15,7 +15,6 @@ def test_capture():
 
     rules = Rules(cfg)
 
-    print("=== Test 1: Horizontal capture ===")
     stones = Stones(cfg)
 
     stones.place(Move((5, 5), "white"))
@@ -43,7 +42,6 @@ def test_capture():
     print(f"Expected captures: [(6, 5), (7, 5)] black stones")
     print(f"Actual captures: {[(c.tile, c.colour) for c in captures]}")
 
-    print("\n=== Test 2: Vertical capture ===")
     stones2 = Stones(cfg)
 
     stones2.place(Move((5, 5), "black"))
@@ -58,7 +56,6 @@ def test_capture():
     print(f"Expected captures: [(5, 6), (5, 7)] white stones")
     print(f"Actual captures: {[(c.tile, c.colour) for c in captures2]}")
 
-    print("\n=== Test 3: Single stone capture ===")
     stones3 = Stones(cfg)
 
     stones3.place(Move((5, 5), "white"))

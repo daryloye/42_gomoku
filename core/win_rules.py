@@ -11,6 +11,13 @@ class WinRules:
     def checkWin(self, stones, move):
         if self.cfg.game.difficulty == "no_overline":
             return self._checkWinNoOverline(stones, move)
+        elif self.cfg.game.difficulty == "pro":
+            row_length = self._getRowLength(stones, move)
+            black_colour = self.cfg.colour.black
+            if move.colour == black_colour:
+                return row_length == 5
+            else:
+                return row_length >= 5
         else:
             row_length = self._getRowLength(stones, move)
             return row_length >= 5
@@ -22,6 +29,18 @@ class WinRules:
             if not self._checkWinNoOverline(stones, move):
                 return None
             return self._getWinningTilesForMove(stones, move, exactly=5)
+        elif self.cfg.game.difficulty == "pro":
+            black_colour = self.cfg.colour.black
+            if move.colour == black_colour:
+                row_length = self._getRowLength(stones, move)
+                if row_length != 5:
+                    return None
+                return self._getWinningTilesForMove(stones, move, exactly=5)
+            else:
+                row_length = self._getRowLength(stones, move)
+                if row_length < 5:
+                    return None
+                return self._getWinningTilesForMove(stones, move)
         else:
             row_length = self._getRowLength(stones, move)
             if row_length < 5:

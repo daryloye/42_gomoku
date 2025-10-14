@@ -26,6 +26,27 @@ class MoveRules:
                 if distance < 3:
                     return False, "Second move must be at least 3 spaces from center!"
 
+        if self.cfg.game.difficulty == "pro":
+            black_colour = self.cfg.colour.black
+            if move.colour == black_colour:
+                stones.map[move.tile] = move.colour
+
+                if self._wouldCreateOverline(stones, move):
+                    del stones.map[move.tile]
+                    return False, "Black cannot create overline (6+)!"
+
+                free_three_count = self.countFreeThrees(stones, move)
+                if free_three_count >= 2:
+                    del stones.map[move.tile]
+                    return False, "Black cannot create double-three!"
+
+                free_four_count = self.countFreeFours(stones, move)
+                if free_four_count >= 2:
+                    del stones.map[move.tile]
+                    return False, "Black cannot create double-four!"
+
+                del stones.map[move.tile]
+
         if self.cfg.game.noDoubleThrees:
             stones.map[move.tile] = move.colour
             free_three_count = self.countFreeThrees(stones, move)
@@ -164,6 +185,112 @@ class MoveRules:
 
         for direction in directions:
             if self._isFreeThree(stones, move, direction):
+                count += 1
+
+        return count
+
+
+    def _wouldCreateOverline(self, stones, move):
+        """Check if a move would create 6 or more in a row (overline)"""
+        directions = [(0, 1), (1, 0), (1, 1), (1, -1)]
+        x, y = move.tile
+        colour = move.colour
+
+        for dx, dy in directions:
+            count = 1
+
+            nx, ny = x + dx, y + dy
+            while 0 <= nx < self.cfg.board.size and 0 <= ny < self.cfg.board.size:
+                if stones.map.get((nx, ny)) == colour:
+                    count += 1
+                    nx += dx
+                    ny += dy
+                else:
+                    break
+
+            nx, ny = x - dx, y - dy
+            while 0 <= nx < self.cfg.board.size and 0 <= ny < self.cfg.board.size:
+                if stones.map.get((nx, ny)) == colour:
+                    count += 1
+                    nx -= dx
+                    ny -= dy
+                else:
+                    break
+
+            if count >= 6:
+                return True
+
+        return False
+
+
+    def _isFreeFour(self, stones, move, direction):
+        """
+        A free-four is a pattern of 4 stones that can immediately win on the next move
+        """
+        dx, dy = direction
+        x, y = move.tile
+        colour = move.colour
+
+        positions = []
+
+        for i in range(1, 6):
+            nx, ny = x + i * dx, y + i * dy
+            if not (0 <= nx < self.cfg.board.size and 0 <= ny < self.cfg.board.size):
+                break
+            stone_colour = stones.map.get((nx, ny))
+            if stone_colour == colour:
+                positions.append(i)
+            elif stone_colour is not None:
+                break
+
+        backward_positions = []
+        for i in range(1, 6):
+            nx, ny = x - i * dx, y - i * dy
+            if not (0 <= nx < self.cfg.board.size and 0 <= ny < self.cfg.board.size):
+                break
+            stone_colour = stones.map.get((nx, ny))
+            if stone_colour == colour:
+                backward_positions.append(-i)
+            elif stone_colour is not None:
+                break
+
+        all_positions = sorted(backward_positions + [0] + positions)
+
+        if len(all_positions) != 4:
+            return False
+
+        span = all_positions[-1] - all_positions[0]
+        if span > 4:
+            return False
+
+        forward_end_x = x + (all_positions[-1] + 1) * dx
+        forward_end_y = y + (all_positions[-1] + 1) * dy
+
+        backward_end_x = x + (all_positions[0] - 1) * dx
+        backward_end_y = y + (all_positions[0] - 1) * dy
+
+        forward_empty = (
+            0 <= forward_end_x < self.cfg.board.size and
+            0 <= forward_end_y < self.cfg.board.size and
+            (forward_end_x, forward_end_y) not in stones.map
+        )
+
+        backward_empty = (
+            0 <= backward_end_x < self.cfg.board.size and
+            0 <= backward_end_y < self.cfg.board.size and
+            (backward_end_x, backward_end_y) not in stones.map
+        )
+
+        return forward_empty and backward_empty
+
+
+    def countFreeFours(self, stones, move):
+        """Count the number of free-four patterns created by a move"""
+        directions = [(0, 1), (1, 0), (1, 1), (1, -1)]
+        count = 0
+
+        for direction in directions:
+            if self._isFreeFour(stones, move, direction):
                 count += 1
 
         return count
