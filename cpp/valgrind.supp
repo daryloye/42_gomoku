@@ -1,0 +1,57 @@
+{
+   <suppress_all_reachable>
+   Memcheck:Leak
+   match-leak-kinds: reachable
+   fun:malloc
+   ...
+}
+{
+   <suppress_all_reachable_calloc>
+   Memcheck:Leak
+   match-leak-kinds: reachable
+   fun:calloc
+   ...
+}
+{
+   <suppress_all_reachable_new>
+   Memcheck:Leak
+   match-leak-kinds: reachable
+   fun:operator new
+   ...
+}
+{
+   <suppress_all_reachable_realloc>
+   Memcheck:Leak
+   match-leak-kinds: reachable
+   fun:realloc
+   ...
+}
+{
+   <suppress_all_reachable_reallocarray>
+   Memcheck:Leak
+   match-leak-kinds: reachable
+   fun:reallocarray
+   ...
+}
+{
+   <suppress_llvm_new>
+   Memcheck:Leak
+   match-leak-kinds: reachable
+   obj:*/libLLVM.so*
+   fun:operator new
+   ...
+}
+{
+   <suppress_llvm_managed>
+   Memcheck:Leak
+   match-leak-kinds: reachable
+   fun:llvm::ManagedStaticBase::RegisterManagedStatic
+   ...
+}
+{
+   <suppress_all_lib_reachable>
+   Memcheck:Leak
+   match-leak-kinds: reachable
+   obj:*/lib*.so*
+   ...
+}
