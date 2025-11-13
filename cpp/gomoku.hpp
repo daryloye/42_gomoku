@@ -2,6 +2,7 @@
 #define GOMOKU_HPP
 
 #include <array>
+// https://www.fltk.org/doc-1.4/intro.html
 #include <FL/Fl.H>
 #include <FL/Fl_Window.H>
 
@@ -10,9 +11,16 @@ constexpr int CELL_SIZE = 40;
 constexpr int OFFSET = 20;
 constexpr int WIN_SIZE = BOARD_SIZE * CELL_SIZE + OFFSET;
 
-enum class Player { EMPTY = 0, BLACK_STONE = 1, WHITE_STONE = 2 };
+enum class Player 
+{
+  EMPTY = 0,
+  BLACK_STONE = 1,
+  WHITE_STONE = 2
+};
 
-class GomokuBoard : public Fl_Window {
+// https://www.fltk.org/doc-1.4/classFl__Window.html
+class GomokuBoard : public Fl_Window
+{
 public:
 	GomokuBoard();
 	~GomokuBoard();
