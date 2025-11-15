@@ -21,4 +21,18 @@ inline Coord windowToBoardCoordinates(Coord windowCoords) {
   return Coord{board_x, board_y};
 }
 
+std::string stoneColourToString(Stone stone) {
+  switch (stone) {
+    case Stone::EMPTY:
+      return "EMPTY";
+    case Stone::BLACK:
+      return "BLACK";
+    case Stone::WHITE:
+      return "WHITE";
+    case Stone::OUTLINE:
+      return "OUTLINE";
+  }
+  return "";
+}
+
 #endif
