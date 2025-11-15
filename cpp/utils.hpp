@@ -8,7 +8,7 @@ struct Coord {
   int y;
 };
 
-Coord windowToBoardCoordinates(Coord windowCoords) {
+inline Coord windowToBoardCoordinates(Coord windowCoords) {
   int board_x = (windowCoords.x - OFFSET + CELL_SIZE / 2) / CELL_SIZE;
   int board_y = (windowCoords.y - OFFSET + CELL_SIZE / 2) / CELL_SIZE;
   

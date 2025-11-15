@@ -47,6 +47,18 @@ htmlcov/
 .dmypy.json
 dmypy.json
 
+# C++
+*.o
+*.a
+*.out
+*.exe
+*.so.1
+CMakeFiles/
+CMakeCache.txt
+cmake_install.cmake
+*.dSYM/
+.cmake/
+
 # Game specific
 *.log
 *.save

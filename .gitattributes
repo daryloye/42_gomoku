@@ -7,6 +7,17 @@
 *.pyx text diff=python
 *.pyi text diff=python
 
+# C++ files
+*.cpp text diff=cpp
+*.cc text diff=cpp
+*.cxx text diff=cpp
+*.c++ text diff=cpp
+*.h text diff=cpp
+*.hpp text diff=cpp
+*.hxx text diff=cpp
+*.h++ text diff=cpp
+*.c text diff=c
+
 # Documentation
 *.md text
 *.txt text
@@ -48,5 +59,11 @@ Makefile text eol=lf
 *.pyo binary
 *.pyd binary
 *.so binary
-*.dll binary
+*.so.1 binary
+*.a binary
+*.o binary
+*.obj binary
+*.out binary
 *.exe binary
+*.dll binary
+*.dylib binary

@@ -5,7 +5,12 @@ CXXFLAGS	=	-Wall -Wextra -Werror -std=c++17 -O2 -static-libstdc++ -fno-pie
 CPPFLAGS	=	-I./ $(shell fltk-config --cxxflags)
 LDFLAGS		=	-no-pie -Wl,-z,now -Wl,--no-as-needed -static-libstdc++ -ldl $(shell fltk-config --ldflags)
 
-SRCS			=	main.cpp
+SRCS			=	main.cpp \
+				GomokuBoard.cpp
+
+HDRS			=	GomokuBoard.hpp \
+				utils.hpp \
+				config.hpp
 
 OBJS			=	$(SRCS:.cpp=.o)
 
@@ -14,7 +19,7 @@ all:			$(NAME)
 $(NAME):	$(OBJS)
 					$(CXX) $(CXXFLAGS) $(OBJS) -o $(NAME) $(LDFLAGS)
 
-%.o:			%.cpp
+%.o:			%.cpp $(HDRS)
 					$(CXX) $(CXXFLAGS) $(CPPFLAGS) -c $< -o $@
 
 clean:

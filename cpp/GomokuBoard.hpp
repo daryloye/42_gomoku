@@ -23,13 +23,15 @@ class GomokuBoard : public Fl_Window
 
 	private:
 		std::array<std::array<Stone, BOARD_SIZE>, BOARD_SIZE> grid;
-		
+
 		Stone currentPlayer = Stone::BLACK;
+		Stone winner = Stone::EMPTY;
 		Coord previousOutlineCell = {-1, -1};
 
 		Stone getStone(Coord cell) const;
 		void setStone(Coord cell, Stone p);
 		bool isValidMove(Coord cell) const;
+		bool checkWin(Coord cell, Stone stone) const;
 };
 
 #endif

@@ -40,6 +40,41 @@ bool GomokuBoard::isValidMove(Coord cell) const
   return true;
 }
 
+bool GomokuBoard::checkWin(Coord cell, Stone stone) const
+{
+  const int directions[4][2] = {
+    {1, 0},
+    {0, 1},
+    {1, 1},
+    {1, -1}
+  };
+
+  for (int d = 0; d < 4; d++) {
+    int dx = directions[d][0];
+    int dy = directions[d][1];
+    int count = 1;
+
+    for (int i = 1; i < 5; i++) {
+      Coord next = {cell.x + i * dx, cell.y + i * dy};
+      if (getStone(next) != stone)
+        break;
+      count++;
+    }
+
+    for (int i = 1; i < 5; i++) {
+      Coord next = {cell.x - i * dx, cell.y - i * dy};
+      if (getStone(next) != stone)
+        break;
+      count++;
+    }
+
+    if (count >= 5)
+      return true;
+  }
+
+  return false;
+}
+
 void GomokuBoard::draw() {
 	// https://www.fltk.org/doc-1.4/drawing.html#fl_rectf
   fl_rectf(0, 0, w(), h(), 220, 200, 150);
@@ -57,24 +92,41 @@ void GomokuBoard::draw() {
 	for (int cellY = 0; cellY < BOARD_SIZE; cellY++) {
 		for (int cellX = 0; cellX < BOARD_SIZE; cellX++) {
 			Stone stone = getStone( {cellX, cellY} );
-			
+
       if (stone == Stone::EMPTY)
         continue;
 
 			int sx = OFFSET + cellX * CELL_SIZE;
 			int sy = OFFSET + cellY * CELL_SIZE;
 			int r = CELL_SIZE / 2 - 2;
-			
-      if (stone == Stone::OUTLINE)
-        fl_color(150, 150, 150);
-      else if (stone == Stone::BLACK) 
+
+      if (stone == Stone::OUTLINE) {
+        if (currentPlayer == Stone::BLACK)
+          fl_color(0, 0, 0);
+        else
+          fl_color(255, 255, 255);
+      } else if (stone == Stone::BLACK)
         fl_color(0, 0, 0);
-			else 
+			else
         fl_color(255, 255, 255);
-			
+
       fl_pie(sx - r, sy - r, r * 2, r * 2, 0, 360);
 		}
 	}
+
+	fl_color(60, 60, 60);
+	fl_font(FL_HELVETICA, 16);
+
+	if (winner != Stone::EMPTY) {
+		const char* winText = (winner == Stone::BLACK) ? "BLACK WINS!" : "WHITE WINS!";
+		fl_draw(winText, OFFSET, OFFSET / 2 + 5);
+	} else {
+		const char* playerText = (currentPlayer == Stone::BLACK) ? "Current: BLACK" : "Current: WHITE";
+		fl_draw(playerText, OFFSET, OFFSET / 2 + 5);
+	}
+
+	fl_font(FL_HELVETICA, 12);
+	fl_draw("Press 'R' to reset", OFFSET, h() - OFFSET / 2 + 2);
 }
 
 int GomokuBoard::handle(int event)
@@ -94,12 +146,17 @@ int GomokuBoard::handle(int event)
 	// Left click to place stone
   if (event == FL_PUSH && Fl::event_button() == FL_LEFT_MOUSE) {
     Coord cell = windowToBoardCoordinates( {Fl::event_x(), Fl::event_y()} );
-		if (isValidMove(cell)) {
+		if (isValidMove(cell) && winner == Stone::EMPTY) {
       setStone(previousOutlineCell, Stone::EMPTY);
       previousOutlineCell = { -1, -1 };
 
       setStone(cell, currentPlayer);
-			currentPlayer = (currentPlayer == Stone::BLACK) ? Stone::WHITE : Stone::BLACK;
+
+      if (checkWin(cell, currentPlayer)) {
+        winner = currentPlayer;
+      } else {
+        currentPlayer = (currentPlayer == Stone::BLACK) ? Stone::WHITE : Stone::BLACK;
+      }
       redraw();
 		}
 	}
@@ -109,8 +166,9 @@ int GomokuBoard::handle(int event)
 		for (int cellY = 0; cellY < BOARD_SIZE; cellY++)
 			for (int cellX = 0; cellX < BOARD_SIZE; cellX++)
 				grid[cellY][cellX] = Stone::EMPTY;
-		
+
     currentPlayer = Stone::BLACK;
+    winner = Stone::EMPTY;
     previousOutlineCell = { -1, -1 };
     redraw();
 	}

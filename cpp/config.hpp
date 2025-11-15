@@ -4,7 +4,7 @@
 constexpr int BOARD_SIZE = 19;
 constexpr int CELL_SIZE = 40;
 constexpr int OFFSET = 20;
-constexpr int WIN_SIZE = BOARD_SIZE * CELL_SIZE + OFFSET;
+constexpr int WIN_SIZE = BOARD_SIZE * CELL_SIZE;
 
 enum class Stone
 {
