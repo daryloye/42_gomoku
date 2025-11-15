@@ -6,11 +6,13 @@ CPPFLAGS	=	-I./ $(shell fltk-config --cxxflags)
 LDFLAGS		=	-no-pie -Wl,-z,now -Wl,--no-as-needed -static-libstdc++ -ldl $(shell fltk-config --ldflags)
 
 SRCS			=	main.cpp \
-				GomokuBoard.cpp
+						GomokuBoard.cpp \
+						winRules.cpp
 
 HDRS			=	GomokuBoard.hpp \
-				utils.hpp \
-				config.hpp
+						utils.hpp \
+						config.hpp \
+						winRules.hpp
 
 OBJS			=	$(SRCS:.cpp=.o)
 

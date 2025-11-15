@@ -1,6 +1,7 @@
 #ifndef UTILS_HPP
 #define UTILS_HPP
 
+#include <string>
 #include "config.hpp"
 
 struct Coord {
@@ -19,9 +20,9 @@ inline Coord windowToBoardCoordinates(Coord windowCoords) {
     board_y = -1;
 
   return Coord{board_x, board_y};
-}
+};
 
-std::string stoneColourToString(Stone stone) {
+inline std::string stoneColourToString(Stone stone) {
   switch (stone) {
     case Stone::EMPTY:
       return "EMPTY";
@@ -33,6 +34,6 @@ std::string stoneColourToString(Stone stone) {
       return "OUTLINE";
   }
   return "";
-}
+};
 
 #endif
