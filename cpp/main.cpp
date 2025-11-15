@@ -1,7 +1,4 @@
-#include <unistd.h>
-#include <signal.h>
-#include <stdlib.h>
-#include "GomokuBoard.hpp"
+#include "Gomoku.hpp"
 
 static GomokuBoard* g_board = nullptr;
 

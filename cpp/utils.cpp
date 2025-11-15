@@ -1,15 +1,6 @@
-#ifndef UTILS_HPP
-#define UTILS_HPP
+#include "Gomoku.hpp"
 
-#include <string>
-#include "config.hpp"
-
-struct Coord {
-  int x;
-  int y;
-};
-
-inline Coord windowToBoardCoordinates(Coord windowCoords) {
+Coord windowToBoardCoordinates(Coord windowCoords) {
   int board_x = (windowCoords.x - OFFSET + CELL_SIZE / 2) / CELL_SIZE;
   int board_y = (windowCoords.y - OFFSET + CELL_SIZE / 2) / CELL_SIZE;
   
@@ -22,7 +13,7 @@ inline Coord windowToBoardCoordinates(Coord windowCoords) {
   return Coord{board_x, board_y};
 };
 
-inline std::string stoneColourToString(Stone stone) {
+std::string stoneColourToString(Stone stone) {
   switch (stone) {
     case Stone::EMPTY:
       return "EMPTY";
@@ -36,4 +27,8 @@ inline std::string stoneColourToString(Stone stone) {
   return "";
 };
 
-#endif
+std::string coordToString(Coord coord) {
+  char buffer[100];
+  sprintf(buffer, "(%d, %d)", coord.x, coord.y);
+  return buffer;
+}

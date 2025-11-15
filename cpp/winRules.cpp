@@ -1,5 +1,4 @@
-#include "winRules.hpp"
-#include <iostream>
+#include "Gomoku.hpp"
 
 static bool check_n_in_a_row(Coord move, Stone colour, const std::array<std::array<Stone, BOARD_SIZE>, BOARD_SIZE>& grid, int n) {
   for (int y = -1; y <= 1; y++) {
@@ -29,3 +28,4 @@ bool hasPlayerWon(Coord move, Stone colour, const std::array<std::array<Stone, B
 
   return false;
 }
+

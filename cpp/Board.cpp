@@ -1,4 +1,4 @@
-#include "GomokuBoard.hpp"
+#include "Gomoku.hpp"
 
 GomokuBoard::GomokuBoard() : Fl_Window(WIN_SIZE, WIN_SIZE, "Gomoku")
 {
@@ -151,6 +151,12 @@ int GomokuBoard::handle(int event)
       previousOutlineCell = { -1, -1 };
 
       setStone(cell, currentPlayer);
+
+      // TODO: remove this test
+      Stone aiPlayer = (currentPlayer == Stone::BLACK) ? Stone::WHITE : Stone::BLACK;
+      MinimaxResult res = minimax(grid, cell, aiPlayer, 2, true);
+      std::cout << res.score << " | " << coordToString(res.move) << std::endl;
+
 
       if (checkWin(cell, currentPlayer)) {
         winner = currentPlayer;
