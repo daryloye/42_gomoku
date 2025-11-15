@@ -129,6 +129,8 @@ void GomokuBoard::draw() {
 		BitmapFont::drawText(playerText, OFFSET, 10, 2);
 	}
 
+	BitmapFont::drawText("Mode: 2-Player", OFFSET + 300, 10, 2);
+
 	char blackTimeStr[50];
 	char whiteTimeStr[50];
 	float blackAvg = (blackMoveCount > 0) ? totalBlackTime / blackMoveCount : 0.0f;
