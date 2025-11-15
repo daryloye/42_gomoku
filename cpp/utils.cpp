@@ -2,8 +2,8 @@
 
 Coord windowToBoardCoordinates(Coord windowCoords) {
   int board_x = (windowCoords.x - OFFSET + CELL_SIZE / 2) / CELL_SIZE;
-  int board_y = (windowCoords.y - OFFSET + CELL_SIZE / 2) / CELL_SIZE;
-  
+  int board_y = (windowCoords.y - TEXT_MARGIN - OFFSET + CELL_SIZE / 2) / CELL_SIZE;
+
   if (board_x < 0 || board_x >= BOARD_SIZE)
     board_x = -1;
 

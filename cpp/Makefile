@@ -9,9 +9,10 @@ SRCS			=	main.cpp \
 						Board.cpp \
 						winRules.cpp \
 						minimax.cpp \
-						utils.cpp
+						utils.cpp \
+						BitmapFont.cpp
 
-HDRS			=	Gomoku.hpp
+HDRS			=	Gomoku.hpp BitmapFont.hpp
 
 OBJS			=	$(SRCS:.cpp=.o)
 

@@ -7,6 +7,7 @@
 #include <limits>
 #include <algorithm>
 #include <string>
+#include <chrono>
 #include <unistd.h>
 #include <signal.h>
 #include <stdlib.h>
@@ -17,12 +18,15 @@
 #include <FL/Fl_Window.H>
 #include <FL/fl_draw.H>
 
-
 // Config
 constexpr int BOARD_SIZE = 19;
 constexpr int CELL_SIZE = 40;
 constexpr int OFFSET = 20;
-constexpr int WIN_SIZE = BOARD_SIZE * CELL_SIZE;
+constexpr int TEXT_MARGIN = 40;
+constexpr int BOARD_WIDTH = BOARD_SIZE * CELL_SIZE;
+constexpr int BOARD_HEIGHT = BOARD_SIZE * CELL_SIZE;
+constexpr int WIN_WIDTH = BOARD_WIDTH + OFFSET;
+constexpr int WIN_HEIGHT = BOARD_HEIGHT + OFFSET * 2 + TEXT_MARGIN;
 
 
 // Types & Constants
@@ -64,6 +68,15 @@ class GomokuBoard : public Fl_Window
 		Stone currentPlayer = Stone::BLACK;
 		Stone winner = Stone::EMPTY;
 		Coord previousOutlineCell = {-1, -1};
+
+		bool fontsInitialized = false;
+
+		std::chrono::steady_clock::time_point moveStartTime;
+		float lastMoveTime = 0.0f;
+		float totalBlackTime = 0.0f;
+		float totalWhiteTime = 0.0f;
+		int blackMoveCount = 0;
+		int whiteMoveCount = 0;
 
 		Stone getStone(Coord cell) const;
 		void setStone(Coord cell, Stone p);

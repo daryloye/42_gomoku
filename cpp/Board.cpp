@@ -1,12 +1,15 @@
 #include "Gomoku.hpp"
+#include "BitmapFont.hpp"
 
-GomokuBoard::GomokuBoard() : Fl_Window(WIN_SIZE, WIN_SIZE, "Gomoku")
+GomokuBoard::GomokuBoard() : Fl_Window(WIN_WIDTH, WIN_HEIGHT, "Gomoku")
 {
 	for (int y = 0; y < BOARD_SIZE; y++)
 		for (int x = 0; x < BOARD_SIZE; x++)
 			grid[y][x] = Stone::EMPTY;
 
-  end();
+	moveStartTime = std::chrono::steady_clock::now();
+
+	end();
 }
 
 GomokuBoard::~GomokuBoard()
@@ -82,11 +85,15 @@ void GomokuBoard::draw() {
 	fl_color(60, 60, 60);
   // https://www.fltk.org/doc-1.4/group__fl__attributes.html#ga3bc05e2b989b509a932bce40a6bc42f5
   fl_line_style(FL_SOLID, 2);
+
+	int boardYOffset = TEXT_MARGIN;
+
 	for (int i = 0; i < BOARD_SIZE; i++) {
-		int pos = OFFSET + i * CELL_SIZE;
+		int xpos = OFFSET + i * CELL_SIZE;
+		int ypos = boardYOffset + OFFSET + i * CELL_SIZE;
     // https://www.fltk.org/doc-1.4/drawing.html#fl_line
-		fl_line(pos, OFFSET, pos, OFFSET + (BOARD_SIZE - 1) * CELL_SIZE);
-		fl_line(OFFSET, pos, OFFSET + (BOARD_SIZE - 1) * CELL_SIZE, pos);
+		fl_line(xpos, boardYOffset + OFFSET, xpos, boardYOffset + OFFSET + (BOARD_SIZE - 1) * CELL_SIZE);
+		fl_line(OFFSET, ypos, OFFSET + (BOARD_SIZE - 1) * CELL_SIZE, ypos);
 	}
 
 	for (int cellY = 0; cellY < BOARD_SIZE; cellY++) {
@@ -97,7 +104,7 @@ void GomokuBoard::draw() {
         continue;
 
 			int sx = OFFSET + cellX * CELL_SIZE;
-			int sy = OFFSET + cellY * CELL_SIZE;
+			int sy = boardYOffset + OFFSET + cellY * CELL_SIZE;
 			int r = CELL_SIZE / 2 - 2;
 
       if (stone == Stone::OUTLINE) {
@@ -114,19 +121,24 @@ void GomokuBoard::draw() {
 		}
 	}
 
-	fl_color(60, 60, 60);
-	fl_font(FL_HELVETICA, 16);
-
 	if (winner != Stone::EMPTY) {
 		const char* winText = (winner == Stone::BLACK) ? "BLACK WINS!" : "WHITE WINS!";
-		fl_draw(winText, OFFSET, OFFSET / 2 + 5);
+		BitmapFont::drawText(winText, OFFSET, 10, 2);
 	} else {
 		const char* playerText = (currentPlayer == Stone::BLACK) ? "Current: BLACK" : "Current: WHITE";
-		fl_draw(playerText, OFFSET, OFFSET / 2 + 5);
+		BitmapFont::drawText(playerText, OFFSET, 10, 2);
 	}
 
-	fl_font(FL_HELVETICA, 12);
-	fl_draw("Press 'R' to reset", OFFSET, h() - OFFSET / 2 + 2);
+	char blackTimeStr[50];
+	char whiteTimeStr[50];
+	float blackAvg = (blackMoveCount > 0) ? totalBlackTime / blackMoveCount : 0.0f;
+	float whiteAvg = (whiteMoveCount > 0) ? totalWhiteTime / whiteMoveCount : 0.0f;
+	snprintf(blackTimeStr, sizeof(blackTimeStr), "BLACK: %.1fms", blackAvg);
+	snprintf(whiteTimeStr, sizeof(whiteTimeStr), "WHITE: %.1fms", whiteAvg);
+
+	BitmapFont::drawText(blackTimeStr, OFFSET, h() - TEXT_MARGIN + 15, 1);
+	BitmapFont::drawText(whiteTimeStr, OFFSET + 250, h() - TEXT_MARGIN + 15, 1);
+	BitmapFont::drawText("Press 'R' to reset", OFFSET, h() - TEXT_MARGIN - 5, 1);
 }
 
 int GomokuBoard::handle(int event)
@@ -150,24 +162,34 @@ int GomokuBoard::handle(int event)
       setStone(previousOutlineCell, Stone::EMPTY);
       previousOutlineCell = { -1, -1 };
 
+      // Calculate time spent on this move
+      auto now = std::chrono::steady_clock::now();
+      auto duration = std::chrono::duration_cast<std::chrono::milliseconds>(now - moveStartTime);
+      lastMoveTime = duration.count();
+
+      if (currentPlayer == Stone::BLACK) {
+        totalBlackTime += lastMoveTime;
+        blackMoveCount++;
+      } else {
+        totalWhiteTime += lastMoveTime;
+        whiteMoveCount++;
+      }
+
       setStone(cell, currentPlayer);
-
-      // TODO: remove this test
-      Stone aiPlayer = (currentPlayer == Stone::BLACK) ? Stone::WHITE : Stone::BLACK;
-      MinimaxResult res = minimax(grid, cell, aiPlayer, 2, true);
-      std::cout << res.score << " | " << coordToString(res.move) << std::endl;
-
 
       if (checkWin(cell, currentPlayer)) {
         winner = currentPlayer;
       } else {
+        // AI buggy kept on placing stone on top le fix?
         currentPlayer = (currentPlayer == Stone::BLACK) ? Stone::WHITE : Stone::BLACK;
       }
+
+      // Reset timer for next move
+      moveStartTime = std::chrono::steady_clock::now();
       redraw();
 		}
 	}
-  
-  // Press R to reload board
+
   else if (event == FL_KEYDOWN && Fl::event_key() == 'r') {
 		for (int cellY = 0; cellY < BOARD_SIZE; cellY++)
 			for (int cellX = 0; cellX < BOARD_SIZE; cellX++)
@@ -176,6 +198,14 @@ int GomokuBoard::handle(int event)
     currentPlayer = Stone::BLACK;
     winner = Stone::EMPTY;
     previousOutlineCell = { -1, -1 };
+
+    totalBlackTime = 0.0f;
+    totalWhiteTime = 0.0f;
+    lastMoveTime = 0.0f;
+    blackMoveCount = 0;
+    whiteMoveCount = 0;
+    moveStartTime = std::chrono::steady_clock::now();
+
     redraw();
 	}
 	
