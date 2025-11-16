@@ -45,20 +45,6 @@ void GomokuBoard::setStone(Coord cell, Stone stone)
     grid[cell.y][cell.x] = stone;
 }
 
-bool GomokuBoard::isValidMove(Coord cell) const
-{
-  // check out of board area
-  if (cell.x < 0 || cell.y < 0)
-    return false;
-
-  // check another stone present
-  Stone stone = getStone(cell);
-  if (stone == Stone::BLACK || stone == Stone::WHITE )
-    return false;
-
-  return true;
-}
-
 bool GomokuBoard::checkWin(Coord cell, Stone stone) const
 {
   const int directions[4][2] = {
@@ -237,7 +223,7 @@ int GomokuBoard::handle(int event)
 	// Show outline when mouse moves
 	if (event == FL_MOVE) {
 		Coord cell = windowToBoardCoordinates({Fl::event_x(), Fl::event_y()});
-		if (!isValidMove(cell))
+		if (!isValidMove(cell, grid))
 			return 1;
 
 		setStone(previousOutlineCell, Stone::EMPTY);
@@ -257,7 +243,7 @@ int GomokuBoard::handle(int event)
 			return 1;
 
 		Coord cell = windowToBoardCoordinates({Fl::event_x(), Fl::event_y()});
-		if (!isValidMove(cell) || winner != Stone::EMPTY)
+		if (!isValidMove(cell, grid) || winner != Stone::EMPTY)
 			return 1;
 
 		setStone(previousOutlineCell, Stone::EMPTY);
@@ -280,7 +266,8 @@ int GomokuBoard::handle(int event)
 			currentPlayer = (currentPlayer == Stone::BLACK) ? Stone::WHITE : Stone::BLACK;
       
       // Testing AI movement - comment if not needed
-      MinimaxResult aiResult = minimax(grid, cell, currentPlayer, 3, true);
+      Minimax m; 
+      MinimaxResult aiResult = m.minimax(grid, cell, currentPlayer, 3, true);
       std::cout << coordToString(aiResult.move) << std::endl;
       setStone(aiResult.move, currentPlayer);
       currentPlayer = (currentPlayer == Stone::BLACK) ? Stone::WHITE : Stone::BLACK;

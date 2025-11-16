@@ -37,3 +37,15 @@ bool hasPlayerWon(Coord move, Stone colour, const Grid& grid) {
   return false;
 }
 
+bool isValidMove(Coord cell, const Grid& grid)
+{
+  // check out of board area
+  if (cell.x < 0 || cell.x >= BOARD_SIZE || cell.y < 0 || cell.y >= BOARD_SIZE)
+    return false;
+
+  // check another stone present
+  if (grid[cell.y][cell.x] == Stone::BLACK || grid[cell.y][cell.x] == Stone::WHITE )
+    return false;
+
+  return true;
+}

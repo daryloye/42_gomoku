@@ -113,7 +113,6 @@ class GomokuBoard : public Fl_Window
 		void reset();
 		Stone getStone(Coord cell) const;
 		void setStone(Coord cell, Stone p);
-		bool isValidMove(Coord cell) const;
 		bool checkWin(Coord cell, Stone stone) const;
 		void drawBoard();
 		void drawUI();
@@ -123,19 +122,33 @@ class GomokuBoard : public Fl_Window
 };
 
 // Win Rules
+int count_x_in_a_row(Coord move, Stone colour, const Grid& grid);
 bool hasPlayerWon(Coord move, Stone colour, const std::array<std::array<Stone, BOARD_SIZE>, BOARD_SIZE>& grid);
-
+bool isValidMove(Coord cell, const Grid& grid);
 
 // Minimax
-MinimaxResult minimax(
-  const Grid& grid,
-  Coord last_move,
-  Stone current_colour,
-  int depth,
-  bool isAiTurn,
-	float alpha = NEG_INFINITY,
-	float beta = POS_INFINITY
-);
+class Minimax {
+	public:
+		Minimax();
+		~Minimax();
+
+		MinimaxResult minimax(
+			const Grid& grid,
+			Coord last_move,
+			Stone current_colour,
+			int depth,
+			bool isAiTurn,
+			float alpha = NEG_INFINITY,
+			float beta = POS_INFINITY
+		);
+	
+	private:
+		static const int directions[8][2];
+
+		bool hasOccupiedNeighbour(Coord cell, const Grid& grid);
+		std::vector<Coord> getPossibleMoves(const Grid& grid);
+		float evaluateMove(Coord move, Stone colour, const Grid& grid);
+};
 
 // Utils
 Coord windowToBoardCoordinates(Coord windowCoords);
