@@ -7,6 +7,7 @@ LDFLAGS		=	-no-pie -Wl,-z,now -Wl,--no-as-needed -static-libstdc++ -ldl $(shell 
 
 SRCS			=	main.cpp \
 						Board.cpp \
+						Timer.cpp \
 						winRules.cpp \
 						minimax.cpp \
 						utils.cpp \
