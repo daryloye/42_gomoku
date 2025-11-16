@@ -41,6 +41,12 @@ enum class Stone
   OUTLINE = 3,
 };
 
+enum class GameMode
+{
+  TWO_PLAYER = 0,
+  AI_VS_HUMAN = 1,
+};
+
 struct Coord {
   int x;
   int y;
@@ -73,35 +79,49 @@ class GomokuBoard : public Fl_Window
 	public:
 	GomokuBoard();
 	~GomokuBoard();
-	
+
 	void draw() override;
 	int handle(int event) override;
-	
+
 	private:
 		Timer timer;
 		std::array<std::array<Stone, BOARD_SIZE>, BOARD_SIZE> grid;
-		
+
 		Stone currentPlayer;
 		Stone winner;
 		Coord previousOutlineCell;
-		
+
 		bool fontsInitialized = false;
-		
+
 		int blackMoveCount;
 		int whiteMoveCount;
-	
+
+		GameMode gameMode = GameMode::TWO_PLAYER;
+		Stone aiColor = Stone::WHITE;
+		bool isAiThinking = false;
+		std::chrono::steady_clock::time_point aiThinkStartTime;
+		float aiThinkTime = 0.0f;
+
+		int blackCaptured = 0;
+		int whiteCaptured = 0;
+
+		MinimaxResult suggestedMove = {NEG_INFINITY, {-1, -1}};
+		bool showSuggestion = false;
+
 		void reset();
 		Stone getStone(Coord cell) const;
 		void setStone(Coord cell, Stone p);
 		bool isValidMove(Coord cell) const;
 		bool checkWin(Coord cell, Stone stone) const;
+		void drawBoard();
+		void drawUI();
+		void drawModeButtons();
+		void makeAIMove();
+		bool clickedModeButton(int x, int y);
 };
-
-
 
 // Win Rules
 bool hasPlayerWon(Coord move, Stone colour, const std::array<std::array<Stone, BOARD_SIZE>, BOARD_SIZE>& grid);
-
 
 // Minimax
 MinimaxResult minimax(
@@ -113,7 +133,6 @@ MinimaxResult minimax(
 	float alpha = NEG_INFINITY,
 	float beta = POS_INFINITY
 );
-
 
 // Utils
 Coord windowToBoardCoordinates(Coord windowCoords);
