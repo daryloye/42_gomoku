@@ -22,12 +22,12 @@
 constexpr int BOARD_SIZE = 19;
 constexpr int CELL_SIZE = 40;
 constexpr int OFFSET = 20;
-constexpr int TEXT_MARGIN = 40;
+constexpr int TEXT_MARGIN = 60;
+constexpr int BOTTOM_MARGIN = 50;
 constexpr int BOARD_WIDTH = BOARD_SIZE * CELL_SIZE;
 constexpr int BOARD_HEIGHT = BOARD_SIZE * CELL_SIZE;
 constexpr int WIN_WIDTH = BOARD_WIDTH + OFFSET;
-constexpr int WIN_HEIGHT = BOARD_HEIGHT + OFFSET * 2 + TEXT_MARGIN;
-
+constexpr int WIN_HEIGHT = BOARD_HEIGHT + TEXT_MARGIN + OFFSET + BOTTOM_MARGIN;
 
 // Types & Constants
 constexpr float POS_INFINITY = std::numeric_limits<float>::infinity();

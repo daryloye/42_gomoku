@@ -121,45 +121,67 @@ void GomokuBoard::drawBoard() {
 	fl_line_style(FL_SOLID, 2);
 
 	int boardYOffset = TEXT_MARGIN;
+	int boardStartX = OFFSET;
+	int boardStartY = boardYOffset + OFFSET;
+	int boardEndX = OFFSET + (BOARD_SIZE - 1) * CELL_SIZE;
+	int boardEndY = boardYOffset + OFFSET + (BOARD_SIZE - 1) * CELL_SIZE;
 
+	// Draw grid lines
 	for (int i = 0; i < BOARD_SIZE; i++) {
-		int xpos = OFFSET + i * CELL_SIZE;
-		int ypos = boardYOffset + OFFSET + i * CELL_SIZE;
-		// https://www.fltk.org/doc-1.4/drawing.html#fl_line
-		fl_line(xpos, boardYOffset + OFFSET, xpos, boardYOffset + OFFSET + (BOARD_SIZE - 1) * CELL_SIZE);
-		fl_line(OFFSET, ypos, OFFSET + (BOARD_SIZE - 1) * CELL_SIZE, ypos);
+		int xpos = boardStartX + i * CELL_SIZE;
+		int ypos = boardStartY + i * CELL_SIZE;
+		fl_line(xpos, boardStartY, xpos, boardEndY);
+		fl_line(boardStartX, ypos, boardEndX, ypos);
 	}
+
+	int r = CELL_SIZE / 2 - 2;
+
+	// Draw black stones first
+	fl_color(0, 0, 0);
+	for (int cellY = 0; cellY < BOARD_SIZE; cellY++) {
+		for (int cellX = 0; cellX < BOARD_SIZE; cellX++) {
+			Stone stone = getStone({cellX, cellY});
+			if (stone == Stone::BLACK) {
+				int sx = boardStartX + cellX * CELL_SIZE;
+				int sy = boardStartY + cellY * CELL_SIZE;
+				fl_pie(sx - r, sy - r, r * 2, r * 2, 0, 360);
+			}
+		}
+	}
+
+	// Draw white stones
+	fl_color(255, 255, 255);
+	for (int cellY = 0; cellY < BOARD_SIZE; cellY++) {
+		for (int cellX = 0; cellX < BOARD_SIZE; cellX++) {
+			Stone stone = getStone({cellX, cellY});
+			if (stone == Stone::WHITE) {
+				int sx = boardStartX + cellX * CELL_SIZE;
+				int sy = boardStartY + cellY * CELL_SIZE;
+				fl_pie(sx - r, sy - r, r * 2, r * 2, 0, 360);
+			}
+		}
+	}
+
+	// Draw outline stones
+	if (currentPlayer == Stone::BLACK)
+		fl_color(0, 0, 0);
+	else
+		fl_color(255, 255, 255);
 
 	for (int cellY = 0; cellY < BOARD_SIZE; cellY++) {
 		for (int cellX = 0; cellX < BOARD_SIZE; cellX++) {
 			Stone stone = getStone({cellX, cellY});
-
-			if (stone == Stone::EMPTY)
-				continue;
-
-			int sx = OFFSET + cellX * CELL_SIZE;
-			int sy = boardYOffset + OFFSET + cellY * CELL_SIZE;
-			int r = CELL_SIZE / 2 - 2;
-
 			if (stone == Stone::OUTLINE) {
-				if (currentPlayer == Stone::BLACK)
-					fl_color(0, 0, 0);
-				else
-					fl_color(255, 255, 255);
-			} else if (stone == Stone::BLACK) {
-				fl_color(0, 0, 0);
-			} else {
-				fl_color(255, 255, 255);
+				int sx = boardStartX + cellX * CELL_SIZE;
+				int sy = boardStartY + cellY * CELL_SIZE;
+				fl_pie(sx - r, sy - r, r * 2, r * 2, 0, 360);
 			}
-
-			fl_pie(sx - r, sy - r, r * 2, r * 2, 0, 360);
 		}
 	}
 
 	if (showSuggestion && suggestedMove.move.x >= 0) {
-		int sx = OFFSET + suggestedMove.move.x * CELL_SIZE;
-		int sy = TEXT_MARGIN + OFFSET + suggestedMove.move.y * CELL_SIZE;
-		int r = CELL_SIZE / 2 - 2;
+		int sx = boardStartX + suggestedMove.move.x * CELL_SIZE;
+		int sy = boardStartY + suggestedMove.move.y * CELL_SIZE;
 		fl_color(200, 100, 0);
 		fl_line_style(FL_SOLID, 3);
 		fl_arc(sx - r - 5, sy - r - 5, (r + 5) * 2, (r + 5) * 2, 0, 360);
@@ -316,7 +338,8 @@ void GomokuBoard::makeAIMove() {
 	Minimax m(aiColor, playerColor);
 	Coord lastMove = {-1, -1};
 
-	MinimaxResult aiResult = m.minimax(grid, lastMove, 3, aiColor, playerColor, true);
+	// currently only till depth 6 then below 500ms damm
+	MinimaxResult aiResult = m.minimax(grid, lastMove, 6, aiColor, playerColor, true);
 
 	setStone(aiResult.move, currentPlayer);
 
