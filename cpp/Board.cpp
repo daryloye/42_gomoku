@@ -312,10 +312,11 @@ void GomokuBoard::makeAIMove() {
 		return;
 	}
 
-	Minimax m;
+  Stone playerColor = Stone::BLACK;
+	Minimax m(aiColor, playerColor);
 	Coord lastMove = {-1, -1};
 
-	MinimaxResult aiResult = m.minimax(grid, lastMove, currentPlayer, 3, true);
+	MinimaxResult aiResult = m.minimax(grid, lastMove, 3, aiColor, playerColor, true);
 
 	setStone(aiResult.move, currentPlayer);
 

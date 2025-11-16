@@ -41,6 +41,13 @@ bool hasPlayerWon(Coord move, Stone colour, const Grid& grid) {
   return false;
 }
 
+bool isThreatDetected(Coord move, Stone colour, const Grid& grid) {
+  if (count_x_in_a_row(move, colour, grid) >= 3)
+    return true;
+
+  return false;
+}
+
 bool isValidMove(Coord cell, const Grid& grid)
 {
   // check out of board area

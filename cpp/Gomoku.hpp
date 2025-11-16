@@ -123,31 +123,34 @@ class GomokuBoard : public Fl_Window
 
 // Win Rules
 int count_x_in_a_row(Coord move, Stone colour, const Grid& grid);
-bool hasPlayerWon(Coord move, Stone colour, const std::array<std::array<Stone, BOARD_SIZE>, BOARD_SIZE>& grid);
+bool hasPlayerWon(Coord move, Stone colour, const Grid& grid);
+bool isThreatDetected(Coord move, Stone colour, const Grid& grid);
 bool isValidMove(Coord cell, const Grid& grid);
 
 // Minimax
 class Minimax {
 	public:
-		Minimax();
+		Minimax(const Stone aiColour, const Stone opponentColour);
 		~Minimax();
 
 		MinimaxResult minimax(
 			const Grid& grid,
-			Coord last_move,
-			Stone current_colour,
+			Coord lastMove,
 			int depth,
-			bool isAiTurn,
+			Stone currentColour,
+			Stone prevColour,
 			float alpha = NEG_INFINITY,
 			float beta = POS_INFINITY
 		);
 	
 	private:
 		static const int directions[8][2];
+		const Stone _aiColour;
+		const Stone _opponentColour;
 
 		bool hasOccupiedNeighbour(Coord cell, const Grid& grid);
 		std::vector<Coord> getPossibleMoves(const Grid& grid);
-		float evaluateMove(Coord move, Stone colour, const Grid& grid);
+		float evaluateMove(const Grid& grid);
 };
 
 // Utils

@@ -1,46 +1,78 @@
 #include "Gomoku.hpp"
 
-Minimax::Minimax() {}
+Minimax::Minimax(const Stone aiColour, const Stone opponentColour): _aiColour(aiColour), _opponentColour(opponentColour) {}
 
 Minimax::~Minimax() {}
 
+
+// Minimax algorithm: AI wants to maximize its score, opponent want to minimize AI's score
+// alpha-beta pruning: 
+// 	- alpha: best score for ai so far
+// 	- beta: best score for opponent so far
 MinimaxResult Minimax::minimax(
   const Grid& grid,
-  Coord last_move,
-  Stone current_colour,
+  Coord lastMove,
   int depth,
-  bool isAiTurn,
+  Stone currentColour,
+  Stone prevColour,
   float alpha,
   float beta
 ) {
-  // Minimax algorithm: AI wants to maximize its score, opponent want to minimize AI's score
-  // alpha-beta pruning: 
-  // 	- alpha: best score for ai so far
-  // 	- beta: best score for opponent so far
+  std::cout << std::endl;
+  // std::cout << "level: " << depth
+  // << " currentColour: " << stoneColourToString(currentColour)
+  // << " prevColour: " << stoneColourToString(prevColour) << std::endl;
   
-  std::vector<Coord> moves = getPossibleMoves(grid);
-
-  if (depth == 0 || moves.empty() ) {
-    float score = evaluateMove(last_move, current_colour, grid);
-    score = (isAiTurn) ? -score : score;
-
-    return {score, last_move};
+  if (hasPlayerWon(lastMove, prevColour, grid)) {
+    std::cout << "player has won" << std::endl;
+    return { (prevColour == _aiColour) ? 1.0e+10f : -1.0e+10f, lastMove };
   }
+
+  std::vector<Coord> moves = getPossibleMoves(grid);
+  for (Coord move: moves) {
+    std::cout << "checking: " << coordToString(move) << std::endl;
+  }
+
+  // AI seems to be prioritising making threats of 3-4 in a row, but does not go for wins or prevent opp from making wins
+  if (currentColour == _aiColour) {
+    for (Coord move : moves) {
+      auto tmp = grid;
+      tmp[move.y][move.x] = _aiColour;
+      if (hasPlayerWon(move, _aiColour, tmp))
+        return { 1.0e+10f, move };
+      if (isThreatDetected(move, _aiColour, tmp))
+        return { 1.0e+9f, move };
+    }
+  } else {
+     for (Coord move : moves) {
+      auto tmp = grid;
+      tmp[move.y][move.x] = _opponentColour;
+      if (hasPlayerWon(move, _opponentColour, tmp))
+        return { -1.0e+10f, move };
+      if (isThreatDetected(move, _opponentColour, tmp))
+        return { -1.0e+9f, move };
+    }
+  }
+
   
-  Stone opponent_colour = (current_colour == Stone::BLACK) ? Stone::WHITE : Stone::BLACK;
+  if (depth == 0 || moves.empty() ) {
+    float score = evaluateMove(grid);
+    return {score, lastMove};
+  }
 
   MinimaxResult best = 
-    (isAiTurn) 
+    (currentColour == _aiColour) 
       ? MinimaxResult{ NEG_INFINITY, {} }
       : MinimaxResult{ POS_INFINITY, {} };
   
   for (Coord move : moves) {
     auto new_grid = grid;
-    new_grid[move.y][move.x] = current_colour;
+    new_grid[move.y][move.x] = currentColour;
     
-    MinimaxResult result = minimax(new_grid, move, opponent_colour, depth - 1, !isAiTurn, alpha, beta);
+    // Next level -> swap colours
+    MinimaxResult result = minimax(new_grid, move, depth - 1, prevColour, currentColour, alpha, beta);
 
-    if (isAiTurn) {
+    if (currentColour == _aiColour) {
       if (result.score > best.score)
         best = result;
       alpha = std::max(alpha, best.score);
@@ -88,7 +120,7 @@ std::vector<Coord> Minimax::getPossibleMoves(const Grid& grid) {
 
   for (int y = 0; y < BOARD_SIZE; y++) {
     for (int x = 0; x < BOARD_SIZE; x++) {
-      if (grid[y][x] == Stone::EMPTY && hasOccupiedNeighbour({y, x}, grid) && isValidMove({y, x}, grid)) {
+      if (grid[y][x] == Stone::EMPTY && hasOccupiedNeighbour({x, y}, grid) && isValidMove({x, y}, grid)) {
         ret.push_back({x, y});
       }
     }
@@ -97,21 +129,66 @@ std::vector<Coord> Minimax::getPossibleMoves(const Grid& grid) {
   return ret;
 }
 
-float Minimax::evaluateMove(Coord move, Stone colour, const Grid& grid) {
-  int count_in_a_row = count_x_in_a_row(move, colour, grid);
-  switch (count_in_a_row) {
-    case 0:
-      return 0;
-    case 1:
-      return 1;
-    case 2:
-      return 10;
-    case 3:
-      return 100;
-    case 4:
-      return 1000;
-    default:
-      return POS_INFINITY;
+float Minimax::evaluateMove(const Grid& grid) {
+  int aiBest = 0;
+  int oppBest = 0;
+  for (int y = 0; y < BOARD_SIZE; y++) {
+    for (int x = 0; x < BOARD_SIZE; x++) {
+      if (grid[y][x] == _aiColour) {
+        int count_in_a_row = count_x_in_a_row({x, y}, _aiColour, grid);
+        aiBest = std::max(aiBest, count_in_a_row);
+      }
+      if (grid[y][x] == _opponentColour) {
+        int count_in_a_row = count_x_in_a_row({x, y}, _opponentColour, grid);
+        oppBest = std::max(oppBest, count_in_a_row);
+      }
+    }
   }
+  
+  float aiScore = 0;
+  switch (aiBest) {
+    case 0:
+      aiScore = 0;
+      break;
+    case 1:
+      aiScore = 1;
+      break;
+    case 2:
+      aiScore = 10;
+      break;
+    case 3:
+      aiScore = 100;
+      break;
+    case 4:
+      aiScore = 1000;
+      break;
+    default:
+      aiScore = 10000;
+      break;
+  }
+
+  float oppScore = 0;
+  switch (oppBest) {
+    case 0:
+      oppScore = 0;
+      break;
+    case 1:
+      oppScore = 1;
+      break;
+    case 2:
+      oppScore = 10;
+      break;
+    case 3:
+      oppScore = 100;
+      break;
+    case 4:
+      oppScore = 1000;
+      break;
+    default:
+      oppScore = 10000;
+      break;
+  }
+
+  return (aiScore - 2 * oppScore);
 }
 
