@@ -3,17 +3,27 @@
 
 GomokuBoard::GomokuBoard() : Fl_Window(WIN_WIDTH, WIN_HEIGHT, "Gomoku")
 {
-	for (int y = 0; y < BOARD_SIZE; y++)
-		for (int x = 0; x < BOARD_SIZE; x++)
-			grid[y][x] = Stone::EMPTY;
-
-	moveStartTime = std::chrono::steady_clock::now();
-
+	reset();
 	end();
 }
 
 GomokuBoard::~GomokuBoard()
 {}
+
+void GomokuBoard::reset()
+{
+  for (int y = 0; y < BOARD_SIZE; y++)
+		for (int x = 0; x < BOARD_SIZE; x++)
+			grid[y][x] = Stone::EMPTY;
+
+  currentPlayer = Stone::BLACK;
+  winner = Stone::EMPTY;
+  previousOutlineCell = { -1, -1 };
+ 
+  blackMoveCount = 0;
+  whiteMoveCount = 0;
+  timer.resetAll();
+}
 
 Stone GomokuBoard::getStone(Coord cell) const
 {
@@ -133,8 +143,8 @@ void GomokuBoard::draw() {
 
 	char blackTimeStr[50];
 	char whiteTimeStr[50];
-	float blackAvg = (blackMoveCount > 0) ? totalBlackTime / blackMoveCount : 0.0f;
-	float whiteAvg = (whiteMoveCount > 0) ? totalWhiteTime / whiteMoveCount : 0.0f;
+	float blackAvg = (blackMoveCount > 0) ? timer.totalBlackTime / blackMoveCount : 0.0f;
+	float whiteAvg = (whiteMoveCount > 0) ? timer.totalWhiteTime / whiteMoveCount : 0.0f;
 	snprintf(blackTimeStr, sizeof(blackTimeStr), "BLACK: %.1fms", blackAvg);
 	snprintf(whiteTimeStr, sizeof(whiteTimeStr), "WHITE: %.1fms", whiteAvg);
 
@@ -148,66 +158,51 @@ int GomokuBoard::handle(int event)
   // Show outline when mouse moves
   if (event == FL_MOVE) {
     Coord cell = windowToBoardCoordinates( {Fl::event_x(), Fl::event_y()} );
-    if (isValidMove(cell)) {
-      setStone(previousOutlineCell, Stone::EMPTY);
-      previousOutlineCell = cell;
+    if (!isValidMove(cell))
+      return 1;
+    
+    setStone(previousOutlineCell, Stone::EMPTY);
+    previousOutlineCell = cell;
       
-      setStone(cell, Stone::OUTLINE);
-      redraw();
-    }
+    setStone(cell, Stone::OUTLINE);
+    redraw();
   }
 
 	// Left click to place stone
   if (event == FL_PUSH && Fl::event_button() == FL_LEFT_MOUSE) {
     Coord cell = windowToBoardCoordinates( {Fl::event_x(), Fl::event_y()} );
-		if (isValidMove(cell) && winner == Stone::EMPTY) {
-      setStone(previousOutlineCell, Stone::EMPTY);
-      previousOutlineCell = { -1, -1 };
-
-      // Calculate time spent on this move
-      auto now = std::chrono::steady_clock::now();
-      auto duration = std::chrono::duration_cast<std::chrono::milliseconds>(now - moveStartTime);
-      lastMoveTime = duration.count();
-
-      if (currentPlayer == Stone::BLACK) {
-        totalBlackTime += lastMoveTime;
-        blackMoveCount++;
-      } else {
-        totalWhiteTime += lastMoveTime;
-        whiteMoveCount++;
-      }
-
-      setStone(cell, currentPlayer);
-
-      if (checkWin(cell, currentPlayer)) {
-        winner = currentPlayer;
-      } else {
-        // AI buggy kept on placing stone on top le fix?
-        currentPlayer = (currentPlayer == Stone::BLACK) ? Stone::WHITE : Stone::BLACK;
-      }
-
-      // Reset timer for next move
-      moveStartTime = std::chrono::steady_clock::now();
-      redraw();
-		}
-	}
-
-  else if (event == FL_KEYDOWN && Fl::event_key() == 'r') {
-		for (int cellY = 0; cellY < BOARD_SIZE; cellY++)
-			for (int cellX = 0; cellX < BOARD_SIZE; cellX++)
-				grid[cellY][cellX] = Stone::EMPTY;
-
-    currentPlayer = Stone::BLACK;
-    winner = Stone::EMPTY;
+		if (!isValidMove(cell) || winner != Stone::EMPTY)
+      return 1;
+    
+    setStone(previousOutlineCell, Stone::EMPTY);
     previousOutlineCell = { -1, -1 };
 
-    totalBlackTime = 0.0f;
-    totalWhiteTime = 0.0f;
-    lastMoveTime = 0.0f;
-    blackMoveCount = 0;
-    whiteMoveCount = 0;
-    moveStartTime = std::chrono::steady_clock::now();
+    // Calculate time spent on this move
+    timer.calculateTimeSpentOnMove(currentPlayer);
 
+    if (currentPlayer == Stone::BLACK) {
+      blackMoveCount++;
+    } else {
+      whiteMoveCount++;
+    }
+
+    setStone(cell, currentPlayer);
+
+    if (checkWin(cell, currentPlayer)) {
+      winner = currentPlayer;
+    } else {
+      // AI buggy kept on placing stone on top le fix?
+      currentPlayer = (currentPlayer == Stone::BLACK) ? Stone::WHITE : Stone::BLACK;
+    }
+
+    // Reset timer for next move
+    timer.resetTimer();
+    redraw();
+	}
+
+  // Press r to reset game
+  else if (event == FL_KEYDOWN && Fl::event_key() == 'r') {
+		reset();
     redraw();
 	}
 	

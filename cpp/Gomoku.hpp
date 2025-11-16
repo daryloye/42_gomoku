@@ -52,37 +52,51 @@ struct MinimaxResult {
 };
 
 
-// https://www.fltk.org/doc-1.4/classFl__Window.html
+class Timer {
+	public:
+		Timer();
+		~Timer();
+			
+		void resetAll();
+		void resetTimer();
+		void calculateTimeSpentOnMove(Stone currentPlayer);
+
+		std::chrono::steady_clock::time_point moveStartTime;
+		float lastMoveTime;
+		float totalBlackTime;
+		float totalWhiteTime;
+};
+	
+	// https://www.fltk.org/doc-1.4/classFl__Window.html
 class GomokuBoard : public Fl_Window
 {
 	public:
-		GomokuBoard();
-		~GomokuBoard();
-
-		void draw() override;
-		int handle(int event) override;
-
+	GomokuBoard();
+	~GomokuBoard();
+	
+	void draw() override;
+	int handle(int event) override;
+	
 	private:
+		Timer timer;
 		std::array<std::array<Stone, BOARD_SIZE>, BOARD_SIZE> grid;
-
-		Stone currentPlayer = Stone::BLACK;
-		Stone winner = Stone::EMPTY;
-		Coord previousOutlineCell = {-1, -1};
-
+		
+		Stone currentPlayer;
+		Stone winner;
+		Coord previousOutlineCell;
+		
 		bool fontsInitialized = false;
-
-		std::chrono::steady_clock::time_point moveStartTime;
-		float lastMoveTime = 0.0f;
-		float totalBlackTime = 0.0f;
-		float totalWhiteTime = 0.0f;
-		int blackMoveCount = 0;
-		int whiteMoveCount = 0;
-
+		
+		int blackMoveCount;
+		int whiteMoveCount;
+	
+		void reset();
 		Stone getStone(Coord cell) const;
 		void setStone(Coord cell, Stone p);
 		bool isValidMove(Coord cell) const;
 		bool checkWin(Coord cell, Stone stone) const;
 };
+
 
 
 // Win Rules
