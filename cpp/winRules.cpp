@@ -1,29 +1,37 @@
 #include "Gomoku.hpp"
 
-static bool check_n_in_a_row(Coord move, Stone colour, const std::array<std::array<Stone, BOARD_SIZE>, BOARD_SIZE>& grid, int n) {
-  for (int y = -1; y <= 1; y++) {
-    for (int x = -1; x <= 1; x++) {
-      if (y == 0 && x == 0)
-        continue;
+static const int directions[4][2] = {
+    {1, 0},
+    {0, 1},
+    {1, 1},
+    {1, -1}
+  };
 
-      int count = 1;
-      int yy = move.y + y;
-      int xx = move.x + x;
-      while (grid[yy][xx] == colour) {
-        count++;
-        if (count == n)
-          return true;
-        yy += y;
-        xx += x;
-      }
+int count_x_in_a_row(Coord move, Stone colour, const Grid& grid) {
+  int best = 1;
+
+  for (auto& d : directions) {
+    int dy = d[0];
+    int dx = d[1];
+
+    int count = 1;
+
+    for (int yy = move.y + dy, xx = move.x + dx; grid[yy][xx] == colour; yy += dy, xx += dx) {
+      count++;
     }
+
+    for (int yy = move.y - dy, xx = move.x - dx; grid[yy][xx] == colour; yy -= dy, xx -= dx) {
+      count++;
+    }
+
+    best = std::max(count, best);
   }
   
-  return false;
+  return best;
 }
 
-bool hasPlayerWon(Coord move, Stone colour, const std::array<std::array<Stone, BOARD_SIZE>, BOARD_SIZE>& grid) {
-  if (check_n_in_a_row(move, colour, grid, 5))
+bool hasPlayerWon(Coord move, Stone colour, const Grid& grid) {
+  if (count_x_in_a_row(move, colour, grid) >= 5)
     return true;
 
   return false;

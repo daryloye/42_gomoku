@@ -278,12 +278,19 @@ int GomokuBoard::handle(int event)
 			winner = currentPlayer;
 		} else {
 			currentPlayer = (currentPlayer == Stone::BLACK) ? Stone::WHITE : Stone::BLACK;
+      
+      // Testing AI movement - comment if not needed
+      MinimaxResult aiResult = minimax(grid, cell, currentPlayer, 3, true);
+      std::cout << coordToString(aiResult.move) << std::endl;
+      setStone(aiResult.move, currentPlayer);
+      currentPlayer = (currentPlayer == Stone::BLACK) ? Stone::WHITE : Stone::BLACK;
+
 
 			// If AI's turn, schedule AI move
 			if (gameMode == GameMode::AI_VS_HUMAN && currentPlayer == aiColor) {
 				isAiThinking = true;
 				aiThinkStartTime = std::chrono::steady_clock::now();
-				// TODO: make ai move????
+				// TODO: make ai move???
 			}
 		}
 

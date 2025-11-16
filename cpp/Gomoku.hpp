@@ -35,7 +35,7 @@ constexpr float NEG_INFINITY = -std::numeric_limits<float>::infinity();
 
 enum class Stone
 {
-  EMPTY = 0,
+	EMPTY = 0,
   BLACK = 1,
   WHITE = 2,
   OUTLINE = 3,
@@ -46,6 +46,8 @@ enum class GameMode
   TWO_PLAYER = 0,
   AI_VS_HUMAN = 1,
 };
+
+typedef std::array<std::array<Stone, BOARD_SIZE>, BOARD_SIZE> Grid;
 
 struct Coord {
   int x;
@@ -86,7 +88,7 @@ class GomokuBoard : public Fl_Window
 	private:
 		Timer timer;
 		std::array<std::array<Stone, BOARD_SIZE>, BOARD_SIZE> grid;
-
+		
 		Stone currentPlayer;
 		Stone winner;
 		Coord previousOutlineCell;
@@ -123,9 +125,10 @@ class GomokuBoard : public Fl_Window
 // Win Rules
 bool hasPlayerWon(Coord move, Stone colour, const std::array<std::array<Stone, BOARD_SIZE>, BOARD_SIZE>& grid);
 
+
 // Minimax
 MinimaxResult minimax(
-  const std::array<std::array<Stone, BOARD_SIZE>, BOARD_SIZE>& grid,
+  const Grid& grid,
   Coord last_move,
   Stone current_colour,
   int depth,
