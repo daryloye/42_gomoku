@@ -16,17 +16,21 @@ int count_x_in_a_row(Coord move, Stone colour, const Grid& grid) {
 
     int count = 1;
 
-    for (int yy = move.y + dy, xx = move.x + dx; grid[yy][xx] == colour; yy += dy, xx += dx) {
+    for (int yy = move.y + dy, xx = move.x + dx;
+         yy >= 0 && yy < BOARD_SIZE && xx >= 0 && xx < BOARD_SIZE && grid[yy][xx] == colour;
+         yy += dy, xx += dx) {
       count++;
     }
 
-    for (int yy = move.y - dy, xx = move.x - dx; grid[yy][xx] == colour; yy -= dy, xx -= dx) {
+    for (int yy = move.y - dy, xx = move.x - dx;
+         yy >= 0 && yy < BOARD_SIZE && xx >= 0 && xx < BOARD_SIZE && grid[yy][xx] == colour;
+         yy -= dy, xx -= dx) {
       count++;
     }
 
     best = std::max(count, best);
   }
-  
+
   return best;
 }
 

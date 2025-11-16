@@ -264,20 +264,16 @@ int GomokuBoard::handle(int event)
 			winner = currentPlayer;
 		} else {
 			currentPlayer = (currentPlayer == Stone::BLACK) ? Stone::WHITE : Stone::BLACK;
-      
-      // Testing AI movement - comment if not needed
-      Minimax m; 
-      MinimaxResult aiResult = m.minimax(grid, cell, currentPlayer, 3, true);
-      std::cout << coordToString(aiResult.move) << std::endl;
-      setStone(aiResult.move, currentPlayer);
-      currentPlayer = (currentPlayer == Stone::BLACK) ? Stone::WHITE : Stone::BLACK;
 
-
-			// If AI's turn, schedule AI move
 			if (gameMode == GameMode::AI_VS_HUMAN && currentPlayer == aiColor) {
 				isAiThinking = true;
 				aiThinkStartTime = std::chrono::steady_clock::now();
-				// TODO: make ai move???
+				Fl::add_timeout(0.01, [](void* v) {
+					GomokuBoard* board = (GomokuBoard*)v;
+					if (board->isAiThinking) {
+						board->makeAIMove();
+					}
+				}, this);
 			}
 		}
 
@@ -311,8 +307,40 @@ int GomokuBoard::handle(int event)
 }
 
 void GomokuBoard::makeAIMove() {
-	// TODO: Implement AI move logic using minimax algorithm
+	if (currentPlayer != aiColor || gameMode != GameMode::AI_VS_HUMAN) {
+		isAiThinking = false;
+		return;
+	}
+
+	Minimax m;
+	Coord lastMove = {-1, -1};
+
+	MinimaxResult aiResult = m.minimax(grid, lastMove, currentPlayer, 3, true);
+
+	setStone(aiResult.move, currentPlayer);
+
+	if (currentPlayer == Stone::BLACK) {
+		blackMoveCount++;
+	} else {
+		whiteMoveCount++;
+	}
+
+	if (checkWin(aiResult.move, currentPlayer)) {
+		winner = currentPlayer;
+	} else {
+		currentPlayer = (currentPlayer == Stone::BLACK) ? Stone::WHITE : Stone::BLACK;
+	}
+
+	auto now = std::chrono::steady_clock::now();
+	auto thinkDuration = std::chrono::duration_cast<std::chrono::milliseconds>(now - aiThinkStartTime);
+	aiThinkTime = thinkDuration.count();
+
+	timer.calculateTimeSpentOnMove(aiColor);
+
+	timer.resetTimer();
+
 	isAiThinking = false;
+	redraw();
 }
 
 bool GomokuBoard::clickedModeButton(int x, int y) {
