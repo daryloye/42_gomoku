@@ -30,6 +30,7 @@ MinimaxResult Minimax::minimax(
 
   std::vector<Coord> moves = getPossibleMoves(grid);
   for (Coord move: moves) {
+    _evaluationCount[move.y][move.x]++;
     std::cout << "checking: " << coordToString(move) << std::endl;
   }
 

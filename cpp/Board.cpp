@@ -14,8 +14,10 @@ GomokuBoard::~GomokuBoard()
 void GomokuBoard::reset()
 {
   for (int y = 0; y < BOARD_SIZE; y++)
-		for (int x = 0; x < BOARD_SIZE; x++)
+		for (int x = 0; x < BOARD_SIZE; x++) {
 			grid[y][x] = Stone::EMPTY;
+			lastEvaluationHeatmap[y][x] = 0;
+		}
 
   currentPlayer = Stone::BLACK;
   winner = Stone::EMPTY;
@@ -28,6 +30,7 @@ void GomokuBoard::reset()
   isAiThinking = false;
   aiThinkTime = 0.0f;
   showSuggestion = false;
+  showHeatmap = false;
   timer.resetAll();
 }
 
@@ -187,6 +190,39 @@ void GomokuBoard::drawBoard() {
 		fl_arc(sx - r - 5, sy - r - 5, (r + 5) * 2, (r + 5) * 2, 0, 360);
 		fl_line_style(FL_SOLID, 2);
 	}
+
+	// Draw AI evaluation heatmap
+	if (showHeatmap) {
+		int maxCount = 0;
+		for (int y = 0; y < BOARD_SIZE; y++) {
+			for (int x = 0; x < BOARD_SIZE; x++) {
+				maxCount = std::max(maxCount, (int)lastEvaluationHeatmap[y][x]);
+			}
+		}
+
+		if (maxCount > 0) {
+			for (int cellY = 0; cellY < BOARD_SIZE; cellY++) {
+				for (int cellX = 0; cellX < BOARD_SIZE; cellX++) {
+					int count = lastEvaluationHeatmap[cellY][cellX];
+					if (count > 0) {
+						int sx = boardStartX + cellX * CELL_SIZE;
+						int sy = boardStartY + cellY * CELL_SIZE;
+
+						// Scale intensity from 0 to 1
+						float intensity = (float)count / maxCount;
+
+						// Color gradient: cool (blue) to hot (red)
+						int red = (int)(255 * intensity);
+						int green = (int)(100 * (1.0f - intensity));
+						int blue = (int)(255 * (1.0f - intensity));
+
+						fl_color(red, green, blue);
+						fl_pie(sx - r, sy - r, r * 2, r * 2, 0, 360);
+					}
+				}
+			}
+		}
+	}
 }
 
 void GomokuBoard::drawUI() {
@@ -211,7 +247,11 @@ void GomokuBoard::drawUI() {
 
 	BitmapFont::drawText(blackTimeStr, OFFSET, h() - TEXT_MARGIN + 15, 1);
 	BitmapFont::drawText(whiteTimeStr, OFFSET, h() - TEXT_MARGIN - 5, 1);
-	BitmapFont::drawText("Press 'R' to reset | Press 'S' for suggestion", OFFSET + 300, h() - TEXT_MARGIN + 5, 1);
+
+	const char* helpText = (gameMode == GameMode::AI_VS_HUMAN)
+		? "Press 'R' to reset | Press 'H' for heatmap"
+		: "Press 'R' to reset | Press 'S' for suggestion";
+	BitmapFont::drawText(helpText, OFFSET + 300, h() - TEXT_MARGIN + 5, 1);
 }
 
 int GomokuBoard::handle(int event)
@@ -323,6 +363,15 @@ int GomokuBoard::handle(int event)
 			}
 			return 1;
 		}
+
+		// Press 'H' to toggle AI evaluation heatmap
+		if (key == 'h' || key == 'H') {
+			if (gameMode == GameMode::AI_VS_HUMAN) {
+				showHeatmap = !showHeatmap;
+				redraw();
+			}
+			return 1;
+		}
 	}
 
 	return Fl_Window::handle(event);
@@ -340,6 +389,8 @@ void GomokuBoard::makeAIMove() {
 
 	// currently only till depth 6 then below 500ms damm
 	MinimaxResult aiResult = m.minimax(grid, lastMove, 6, aiColor, playerColor, true);
+
+	lastEvaluationHeatmap = m.getEvaluationHeatmap();
 
 	setStone(aiResult.move, currentPlayer);
 

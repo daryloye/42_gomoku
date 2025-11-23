@@ -48,6 +48,7 @@ enum class GameMode
 };
 
 typedef std::array<std::array<Stone, BOARD_SIZE>, BOARD_SIZE> Grid;
+typedef std::array<std::array<int, BOARD_SIZE>, BOARD_SIZE> CountGrid;
 
 struct Coord {
   int x;
@@ -110,6 +111,9 @@ class GomokuBoard : public Fl_Window
 		MinimaxResult suggestedMove = {NEG_INFINITY, {-1, -1}};
 		bool showSuggestion = false;
 
+		CountGrid lastEvaluationHeatmap;
+		bool showHeatmap = false;
+
 		void reset();
 		Stone getStone(Coord cell) const;
 		void setStone(Coord cell, Stone p);
@@ -142,11 +146,19 @@ class Minimax {
 			float alpha = NEG_INFINITY,
 			float beta = POS_INFINITY
 		);
-	
+
+		const CountGrid& getEvaluationHeatmap() const { return _evaluationCount; }
+		void resetHeatmap() {
+			for (int y = 0; y < BOARD_SIZE; y++)
+				for (int x = 0; x < BOARD_SIZE; x++)
+					_evaluationCount[y][x] = 0;
+		}
+
 	private:
 		static const int directions[8][2];
 		const Stone _aiColour;
 		const Stone _opponentColour;
+		CountGrid _evaluationCount;
 
 		bool hasOccupiedNeighbour(Coord cell, const Grid& grid);
 		std::vector<Coord> getPossibleMoves(const Grid& grid);
