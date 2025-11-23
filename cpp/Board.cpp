@@ -31,6 +31,7 @@ void GomokuBoard::reset()
   aiThinkTime = 0.0f;
   showSuggestion = false;
   showHeatmap = false;
+  heatmapNeedsRedraw = false;
   timer.resetAll();
 }
 
@@ -191,7 +192,6 @@ void GomokuBoard::drawBoard() {
 		fl_line_style(FL_SOLID, 2);
 	}
 
-	// Draw AI evaluation heatmap
 	if (showHeatmap) {
 		int maxCount = 0;
 		for (int y = 0; y < BOARD_SIZE; y++) {
@@ -204,20 +204,43 @@ void GomokuBoard::drawBoard() {
 			for (int cellY = 0; cellY < BOARD_SIZE; cellY++) {
 				for (int cellX = 0; cellX < BOARD_SIZE; cellX++) {
 					int count = lastEvaluationHeatmap[cellY][cellX];
-					if (count > 0) {
+					if (count > 0 && getStone({cellX, cellY}) == Stone::EMPTY) {
 						int sx = boardStartX + cellX * CELL_SIZE;
 						int sy = boardStartY + cellY * CELL_SIZE;
 
-						// Scale intensity from 0 to 1
 						float intensity = (float)count / maxCount;
 
-						// Color gradient: cool (blue) to hot (red)
-						int red = (int)(255 * intensity);
-						int green = (int)(100 * (1.0f - intensity));
-						int blue = (int)(255 * (1.0f - intensity));
+						int red = (int)(100 + 155 * intensity);
+						int green = (int)(150 + 50 * (1.0f - intensity));
+						int blue = (int)(200 + 55 * (1.0f - intensity));
 
 						fl_color(red, green, blue);
 						fl_pie(sx - r, sy - r, r * 2, r * 2, 0, 360);
+					}
+				}
+			}
+		}
+
+		if (maxCount > 0) {
+			for (int cellY = 0; cellY < BOARD_SIZE; cellY++) {
+				for (int cellX = 0; cellX < BOARD_SIZE; cellX++) {
+					int count = lastEvaluationHeatmap[cellY][cellX];
+					if (count > 0 && getStone({cellX, cellY}) == Stone::EMPTY) {
+						int sx = boardStartX + cellX * CELL_SIZE;
+						int sy = boardStartY + cellY * CELL_SIZE;
+
+						fl_color(255, 255, 255);
+						std::string countStr;
+						if (count >= 1000000) {
+							countStr = std::to_string(count / 1000000) + "m";
+						} else if (count >= 1000) {
+							countStr = std::to_string(count / 1000) + "k";
+						} else {
+							countStr = std::to_string(count);
+						}
+						int textX = sx - 4 * (int)countStr.length();
+						int textY = sy - 8;
+						BitmapFont::drawText(countStr, textX, textY, 1);
 					}
 				}
 			}
@@ -368,6 +391,9 @@ int GomokuBoard::handle(int event)
 		if (key == 'h' || key == 'H') {
 			if (gameMode == GameMode::AI_VS_HUMAN) {
 				showHeatmap = !showHeatmap;
+				if (showHeatmap) {
+					heatmapNeedsRedraw = true;
+				}
 				redraw();
 			}
 			return 1;
@@ -388,9 +414,10 @@ void GomokuBoard::makeAIMove() {
 	Coord lastMove = {-1, -1};
 
 	// currently only till depth 6 then below 500ms damm
-	MinimaxResult aiResult = m.minimax(grid, lastMove, 6, aiColor, playerColor, true);
+	MinimaxResult aiResult = m.minimax(grid, lastMove, 7, aiColor, playerColor, true);
 
 	lastEvaluationHeatmap = m.getEvaluationHeatmap();
+	heatmapNeedsRedraw = true;
 
 	setStone(aiResult.move, currentPlayer);
 

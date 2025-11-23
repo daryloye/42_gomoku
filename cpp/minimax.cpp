@@ -1,6 +1,8 @@
 #include "Gomoku.hpp"
 
-Minimax::Minimax(const Stone aiColour, const Stone opponentColour): _aiColour(aiColour), _opponentColour(opponentColour) {}
+Minimax::Minimax(const Stone aiColour, const Stone opponentColour): _aiColour(aiColour), _opponentColour(opponentColour) {
+	resetHeatmap();
+}
 
 Minimax::~Minimax() {}
 

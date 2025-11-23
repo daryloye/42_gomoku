@@ -113,6 +113,7 @@ class GomokuBoard : public Fl_Window
 
 		CountGrid lastEvaluationHeatmap;
 		bool showHeatmap = false;
+		bool heatmapNeedsRedraw = false;
 
 		void reset();
 		Stone getStone(Coord cell) const;
