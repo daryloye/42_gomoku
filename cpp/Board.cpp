@@ -331,6 +331,9 @@ int GomokuBoard::handle(int event)
 		if (!isValidMove(cell, grid) || winner != Stone::EMPTY)
 			return 1;
 
+		if (createsDoubleThree(cell, currentPlayer, grid))
+			return 1;
+
 		setStone(previousOutlineCell, Stone::EMPTY);
 		previousOutlineCell = {-1, -1};
 
@@ -345,7 +348,47 @@ int GomokuBoard::handle(int event)
 
 		setStone(cell, currentPlayer);
 
-		if (checkWin(cell, currentPlayer)) {
+		// Handle captures
+		int capturedPairs = countCapturedPairs(cell, currentPlayer, grid);
+		if (currentPlayer == Stone::BLACK) {
+			blackCaptured += capturedPairs;
+		} else {
+			whiteCaptured += capturedPairs;
+		}
+
+		// Remove captured stones
+		if (capturedPairs > 0) {
+			Stone opponent = (currentPlayer == Stone::BLACK) ? Stone::WHITE : Stone::BLACK;
+			const int directions[4][2] = {
+				{1, 0}, {0, 1}, {1, 1}, {1, -1}
+			};
+
+			for (const auto& dir : directions) {
+				int dx = dir[0];
+				int dy = dir[1];
+
+				// Check positive direction
+				if (grid[cell.y + dy][cell.x + dx] == opponent &&
+					grid[cell.y + 2*dy][cell.x + 2*dx] == opponent &&
+					grid[cell.y + 3*dy][cell.x + 3*dx] == currentPlayer) {
+					grid[cell.y + dy][cell.x + dx] = Stone::EMPTY;
+					grid[cell.y + 2*dy][cell.x + 2*dx] = Stone::EMPTY;
+				}
+
+				// Check negative direction
+				if (grid[cell.y - dy][cell.x - dx] == opponent &&
+					grid[cell.y - 2*dy][cell.x - 2*dx] == opponent &&
+					grid[cell.y - 3*dy][cell.x - 3*dx] == currentPlayer) {
+					grid[cell.y - dy][cell.x - dx] = Stone::EMPTY;
+					grid[cell.y - 2*dy][cell.x - 2*dx] = Stone::EMPTY;
+				}
+			}
+		}
+
+		bool winByAlignment = checkWin(cell, currentPlayer);
+		bool winByCapture = (currentPlayer == Stone::BLACK) ? (blackCaptured >= 10) : (whiteCaptured >= 10);
+
+		if (winByAlignment || winByCapture) {
 			winner = currentPlayer;
 		} else {
 			currentPlayer = (currentPlayer == Stone::BLACK) ? Stone::WHITE : Stone::BLACK;
