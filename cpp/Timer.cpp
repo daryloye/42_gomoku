@@ -13,6 +13,8 @@ void Timer::resetAll()
   totalBlackTime = 0.0f;
   totalWhiteTime = 0.0f;
   lastMoveTime = 0.0f;
+  lastBlackMoveTime = 0.0f;
+  lastWhiteMoveTime = 0.0f;
   moveStartTime = std::chrono::steady_clock::now();
 }
 
@@ -28,8 +30,10 @@ void Timer::calculateTimeSpentOnMove(Stone currentPlayer)
   lastMoveTime = duration.count();
 
   if (currentPlayer == Stone::BLACK) {
+    lastBlackMoveTime = lastMoveTime;
     totalBlackTime += lastMoveTime;
   } else {
+    lastWhiteMoveTime = lastMoveTime;
     totalWhiteTime += lastMoveTime;
   }
 }

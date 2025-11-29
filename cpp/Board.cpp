@@ -27,6 +27,9 @@ void GomokuBoard::reset()
   whiteMoveCount = 0;
   blackCaptured = 0;
   whiteCaptured = 0;
+  illegalMoveCell = { -1, -1 };
+  hasIllegalMove = false;
+  illegalDirections = {false, false, false, false};
   isAiThinking = false;
   aiThinkTime = 0.0f;
   showSuggestion = false;
@@ -82,6 +85,57 @@ bool GomokuBoard::checkWin(Coord cell, Stone stone) const
   }
 
   return false;
+}
+
+void GomokuBoard::analyzeDoubleThree(Coord move, Stone colour, std::array<bool, 4>& directions)
+{
+	const int dirs[4][2] = {
+		{1, 0},   // horizontal
+		{0, 1},   // vertical
+		{1, 1},   // diagonal down-right
+		{1, -1}   // diagonal down-left
+	};
+
+	for (int d = 0; d < 4; d++) {
+		int dx = dirs[d][0];
+		int dy = dirs[d][1];
+
+		int countForward = 0;
+		int countBackward = 0;
+
+		for (int i = 1; i < 4; i++) {
+			Coord forward = {move.x + i*dx, move.y + i*dy};
+			if (forward.x >= 0 && forward.x < BOARD_SIZE && forward.y >= 0 && forward.y < BOARD_SIZE &&
+				grid[forward.y][forward.x] == colour)
+				countForward++;
+			else
+				break;
+		}
+
+		for (int i = 1; i < 4; i++) {
+			Coord backward = {move.x - i*dx, move.y - i*dy};
+			if (backward.x >= 0 && backward.x < BOARD_SIZE && backward.y >= 0 && backward.y < BOARD_SIZE &&
+				grid[backward.y][backward.x] == colour)
+				countBackward++;
+			else
+				break;
+		}
+
+		int totalCount = 1 + countForward + countBackward;
+
+		if (totalCount >= 3) {
+			Coord endForward = {move.x + (countForward + 1)*dx, move.y + (countForward + 1)*dy};
+			Coord endBackward = {move.x - (countBackward + 1)*dx, move.y - (countBackward + 1)*dy};
+
+			bool forwardOpen = (endForward.x < 0 || endForward.x >= BOARD_SIZE || endForward.y < 0 || endForward.y >= BOARD_SIZE) ||
+							   grid[endForward.y][endForward.x] == Stone::EMPTY;
+			bool backwardOpen = (endBackward.x < 0 || endBackward.x >= BOARD_SIZE || endBackward.y < 0 || endBackward.y >= BOARD_SIZE) ||
+							    grid[endBackward.y][endBackward.x] == Stone::EMPTY;
+
+			if (totalCount == 3 && forwardOpen && backwardOpen)
+				directions[d] = true;
+		}
+	}
 }
 
 void GomokuBoard::draw() {
@@ -192,6 +246,38 @@ void GomokuBoard::drawBoard() {
 		fl_line_style(FL_SOLID, 2);
 	}
 
+	if (hasIllegalMove && illegalMoveCell.x >= 0 && illegalMoveCell.x < BOARD_SIZE && illegalMoveCell.y >= 0 && illegalMoveCell.y < BOARD_SIZE) {
+		int sx = boardStartX + illegalMoveCell.x * CELL_SIZE;
+		int sy = boardStartY + illegalMoveCell.y * CELL_SIZE;
+
+		fl_color(255, 0, 0);
+		fl_line_style(FL_SOLID, 4);
+		int offsetX = 10;
+		int offsetY = 10;
+		fl_line(sx - offsetX, sy - offsetY, sx + offsetX, sy + offsetY);
+		fl_line(sx + offsetX, sy - offsetY, sx - offsetX, sy + offsetY);
+		fl_line_style(FL_SOLID, 2);
+
+		const int dirs[4][2] = {{1, 0}, {0, 1}, {1, 1}, {1, -1}};
+		const int colors[4][3] = {{255, 100, 0}, {100, 255, 0}, {100, 0, 255}, {255, 0, 255}};
+
+		for (int d = 0; d < 4; d++) {
+			if (illegalDirections[d]) {
+				int dx = dirs[d][0];
+				int dy = dirs[d][1];
+				fl_color(colors[d][0], colors[d][1], colors[d][2]);
+				fl_line_style(FL_SOLID, 3);
+
+				int x1 = sx - 3 * CELL_SIZE * dx;
+				int y1 = sy - 3 * CELL_SIZE * dy;
+				int x2 = sx + 3 * CELL_SIZE * dx;
+				int y2 = sy + 3 * CELL_SIZE * dy;
+				fl_line(x1, y1, x2, y2);
+			}
+		}
+		fl_line_style(FL_SOLID, 2);
+	}
+
 	if (showHeatmap) {
 		int maxCount = 0;
 		for (int y = 0; y < BOARD_SIZE; y++) {
@@ -231,13 +317,9 @@ void GomokuBoard::drawBoard() {
 
 						fl_color(255, 255, 255);
 						std::string countStr;
-						if (count >= 1000000) {
-							countStr = std::to_string(count / 1000000) + "m";
-						} else if (count >= 1000) {
-							countStr = std::to_string(count / 1000) + "k";
-						} else {
-							countStr = std::to_string(count);
-						}
+						if (count >= 1000000) countStr = std::to_string(count / 1000000) + "m";
+						else if (count >= 1000) countStr = std::to_string(count / 1000) + "k";
+						else countStr = std::to_string(count);
 						int textX = sx - 4 * (int)countStr.length();
 						int textY = sy - 8;
 						BitmapFont::drawText(countStr, textX, textY, 1);
@@ -260,21 +342,20 @@ void GomokuBoard::drawUI() {
 	const char* modeText = (gameMode == GameMode::TWO_PLAYER) ? "Mode: 2-Player" : "Mode: AI vs Human";
 	BitmapFont::drawText(modeText, OFFSET + 450, 35, 2);
 
-	// Bottom timing and capture info
-	char blackTimeStr[50];
-	char whiteTimeStr[50];
+	char blackTimeStr[80];
+	char whiteTimeStr[80];
 	float blackAvg = (blackMoveCount > 0) ? timer.totalBlackTime / blackMoveCount : 0.0f;
 	float whiteAvg = (whiteMoveCount > 0) ? timer.totalWhiteTime / whiteMoveCount : 0.0f;
-	snprintf(blackTimeStr, sizeof(blackTimeStr), "BLACK: %.1fms | Captured: %d", blackAvg, blackCaptured);
-	snprintf(whiteTimeStr, sizeof(whiteTimeStr), "WHITE: %.1fms | Captured: %d", whiteAvg, whiteCaptured);
+	snprintf(blackTimeStr, sizeof(blackTimeStr), "BLACK: avg %.1fms / last %.1fms | Captured: %d", blackAvg, timer.lastBlackMoveTime, blackCaptured);
+	snprintf(whiteTimeStr, sizeof(whiteTimeStr), "WHITE: avg %.1fms / last %.1fms | Captured: %d", whiteAvg, timer.lastWhiteMoveTime, whiteCaptured);
 
-	BitmapFont::drawText(blackTimeStr, OFFSET, h() - TEXT_MARGIN + 15, 1);
-	BitmapFont::drawText(whiteTimeStr, OFFSET, h() - TEXT_MARGIN - 5, 1);
+	BitmapFont::drawText(whiteTimeStr, OFFSET, h() - TEXT_MARGIN + 15, 1);
+	BitmapFont::drawText(blackTimeStr, OFFSET, h() - TEXT_MARGIN - 5, 1);
 
 	const char* helpText = (gameMode == GameMode::AI_VS_HUMAN)
 		? "Press 'R' to reset | Press 'H' for heatmap"
 		: "Press 'R' to reset | Press 'S' for suggestion";
-	BitmapFont::drawText(helpText, OFFSET + 300, h() - TEXT_MARGIN + 5, 1);
+	BitmapFont::drawText(helpText, OFFSET, h() - 25, 1);
 }
 
 int GomokuBoard::handle(int event)
@@ -328,23 +409,34 @@ int GomokuBoard::handle(int event)
 			return 1;
 
 		Coord cell = windowToBoardCoordinates({Fl::event_x(), Fl::event_y()});
-		if (!isValidMove(cell, grid) || winner != Stone::EMPTY)
+		if (!isValidMove(cell, grid) || winner != Stone::EMPTY) {
+			if (cell.x >= 0 && cell.x < BOARD_SIZE && cell.y >= 0 && cell.y < BOARD_SIZE) {
+				illegalMoveCell = cell;
+				hasIllegalMove = true;
+				redraw();
+			}
 			return 1;
+		}
 
-		if (createsDoubleThree(cell, currentPlayer, grid))
+		if (createsDoubleThree(cell, currentPlayer, grid)) {
+			illegalMoveCell = cell;
+			hasIllegalMove = true;
+			illegalDirections = {false, false, false, false};
+			analyzeDoubleThree(cell, currentPlayer, illegalDirections);
+			redraw();
 			return 1;
+		}
 
 		setStone(previousOutlineCell, Stone::EMPTY);
 		previousOutlineCell = {-1, -1};
+		hasIllegalMove = false;
+		illegalMoveCell = {-1, -1};
+		illegalDirections = {false, false, false, false};
 
-		// Calculate time spent on this move
 		timer.calculateTimeSpentOnMove(currentPlayer);
 
-		if (currentPlayer == Stone::BLACK) {
-			blackMoveCount++;
-		} else {
-			whiteMoveCount++;
-		}
+		if (currentPlayer == Stone::BLACK) blackMoveCount++;
+		else whiteMoveCount++;
 
 		setStone(cell, currentPlayer);
 

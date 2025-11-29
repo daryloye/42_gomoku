@@ -72,6 +72,8 @@ class Timer {
 
 		std::chrono::steady_clock::time_point moveStartTime;
 		float lastMoveTime;
+		float lastBlackMoveTime;
+		float lastWhiteMoveTime;
 		float totalBlackTime;
 		float totalWhiteTime;
 };
@@ -108,6 +110,10 @@ class GomokuBoard : public Fl_Window
 		int blackCaptured = 0;
 		int whiteCaptured = 0;
 
+		Coord illegalMoveCell = {-1, -1};
+		bool hasIllegalMove = false;
+		std::array<bool, 4> illegalDirections = {false, false, false, false};
+
 		MinimaxResult suggestedMove = {NEG_INFINITY, {-1, -1}};
 		bool showSuggestion = false;
 
@@ -124,6 +130,7 @@ class GomokuBoard : public Fl_Window
 		void drawModeButtons();
 		void makeAIMove();
 		bool clickedModeButton(int x, int y);
+		void analyzeDoubleThree(Coord move, Stone colour, std::array<bool, 4>& directions);
 };
 
 // Win Rules
