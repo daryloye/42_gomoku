@@ -24,9 +24,10 @@ constexpr int CELL_SIZE = 40;
 constexpr int OFFSET = 20;
 constexpr int TEXT_MARGIN = 60;
 constexpr int BOTTOM_MARGIN = 50;
+constexpr int BUTTON_PANEL_WIDTH = 120;  // Width for buttons on right side
 constexpr int BOARD_WIDTH = BOARD_SIZE * CELL_SIZE;
 constexpr int BOARD_HEIGHT = BOARD_SIZE * CELL_SIZE;
-constexpr int WIN_WIDTH = BOARD_WIDTH + OFFSET;
+constexpr int WIN_WIDTH = BOARD_WIDTH + OFFSET + BUTTON_PANEL_WIDTH;
 constexpr int WIN_HEIGHT = BOARD_HEIGHT + TEXT_MARGIN + OFFSET + BOTTOM_MARGIN;
 
 // Types & Constants
@@ -45,6 +46,14 @@ enum class GameMode
 {
 	TWO_PLAYER = 0,
 	AI_VS_HUMAN = 1,
+};
+
+enum class Opening
+{
+	STANDARD = 0,
+	PRO = 1,
+	SWAP = 2,
+	SWAP2 = 3,
 };
 
 typedef std::array<std::array<Stone, BOARD_SIZE>, BOARD_SIZE> Grid;
@@ -91,7 +100,7 @@ class GomokuBoard : public Fl_Window
 	private:
 		Timer timer;
 		std::array<std::array<Stone, BOARD_SIZE>, BOARD_SIZE> grid;
-		
+
 		Stone currentPlayer;
 		Stone winner;
 		Coord previousOutlineCell;
@@ -121,15 +130,21 @@ class GomokuBoard : public Fl_Window
 		bool showHeatmap = false;
 		bool heatmapNeedsRedraw = false;
 
+		Opening selectedOpening = Opening::STANDARD;
+		bool gameStarted = false;
+
 		void reset();
+		void initializeOpening(Opening opening);
 		Stone getStone(Coord cell) const;
 		void setStone(Coord cell, Stone p);
 		bool checkWin(Coord cell, Stone stone) const;
 		void drawBoard();
 		void drawUI();
 		void drawModeButtons();
+		void drawOpeningButtons();
 		void makeAIMove();
 		bool clickedModeButton(int x, int y);
+		bool clickedOpeningButton(int x, int y);
 		void analyzeDoubleThree(Coord move, Stone colour, std::array<bool, 4>& directions);
 };
 
