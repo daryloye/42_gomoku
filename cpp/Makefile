@@ -2,9 +2,11 @@ NAME			=	Gomoku
 BUILD_DIR		=	build
 
 CXX				=	c++
-CXXFLAGS	=	-Wall -Wextra -Werror -std=c++17 -O2 -static-libstdc++ -fno-pie
+CXXFLAGS	=	-Wall -Wextra -Werror -std=c++17 -O3 -march=native -mtune=native \
+				-flto -funroll-loops -finline-functions -ffast-math \
+				-static-libstdc++ -fno-pie
 CPPFLAGS	=	-I./ $(shell fltk-config --cxxflags)
-LDFLAGS		=	-no-pie -Wl,-z,now -Wl,--no-as-needed -static-libstdc++ -ldl $(shell fltk-config --ldflags)
+LDFLAGS		=	-O3 -flto -no-pie -Wl,-z,now -Wl,--no-as-needed -static-libstdc++ -ldl $(shell fltk-config --ldflags)
 
 SRCS			=	main.cpp \
 					Board.cpp \
@@ -35,8 +37,14 @@ fclean:			clean
 
 re:				fclean all
 
-valgrind:	$(NAME)
+valgrind-build:
+				@$(MAKE) fclean
+				@$(MAKE) CXXFLAGS="-Wall -Wextra -Werror -std=c++17 -O2 -g -static-libstdc++ -fno-pie" \
+						 LDFLAGS="-O2 -no-pie -Wl,-z,now -Wl,--no-as-needed -static-libstdc++ -ldl $$(fltk-config --ldflags)" \
+						 $(NAME)
+
+valgrind:	valgrind-build
 				valgrind --leak-check=full --show-leak-kinds=all \
 				--track-origins=yes --suppressions=valgrind.supp ./$(NAME)
 
-.PHONY:		all clean fclean re valgrind
+.PHONY:		all clean fclean re valgrind valgrind-build
