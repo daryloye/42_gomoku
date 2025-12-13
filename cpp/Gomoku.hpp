@@ -48,14 +48,6 @@ enum class GameMode
 	AI_VS_HUMAN = 1,
 };
 
-enum class Opening
-{
-	STANDARD = 0,
-	PRO = 1,
-	SWAP = 2,
-	SWAP2 = 3,
-};
-
 typedef std::array<std::array<Stone, BOARD_SIZE>, BOARD_SIZE> Grid;
 typedef std::array<std::array<int, BOARD_SIZE>, BOARD_SIZE> CountGrid;
 
@@ -130,21 +122,16 @@ class GomokuBoard : public Fl_Window
 		bool showHeatmap = false;
 		bool heatmapNeedsRedraw = false;
 
-		Opening selectedOpening = Opening::STANDARD;
-		bool gameStarted = false;
 
 		void reset();
-		void initializeOpening(Opening opening);
 		Stone getStone(Coord cell) const;
 		void setStone(Coord cell, Stone p);
 		bool checkWin(Coord cell, Stone stone) const;
 		void drawBoard();
 		void drawUI();
 		void drawModeButtons();
-		void drawOpeningButtons();
 		void makeAIMove();
 		bool clickedModeButton(int x, int y);
-		bool clickedOpeningButton(int x, int y);
 		void analyzeDoubleThree(Coord move, Stone colour, std::array<bool, 4>& directions);
 };
 

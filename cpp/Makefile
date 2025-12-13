@@ -12,7 +12,7 @@ SRCS			=	main.cpp \
 					Board.cpp \
 					Timer.cpp \
 					winRules.cpp \
-					minimax.cpp \
+					minimax2.cpp \
 					utils.cpp \
 					BitmapFont.cpp
 

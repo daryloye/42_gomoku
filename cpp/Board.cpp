@@ -33,9 +33,6 @@ void GomokuBoard::reset() {
   showHeatmap = false;
   heatmapNeedsRedraw = false;
   timer.resetAll();
-
-  selectedOpening = Opening::STANDARD;
-  gameStarted = false;
 }
 
 Stone GomokuBoard::getStone(Coord cell) const {
@@ -140,7 +137,6 @@ void GomokuBoard::draw() {
 
   drawBoard();
   drawModeButtons();
-  drawOpeningButtons();
   drawUI();
 }
 
@@ -375,70 +371,11 @@ void GomokuBoard::drawUI() {
   BitmapFont::drawText(helpText, OFFSET, h() - 25, 1);
 }
 
-void GomokuBoard::drawOpeningButtons() {
-  // Opening buttons below mode buttons on right side
-  fl_line_style(FL_SOLID, 2);
-  int buttonX = OFFSET + BOARD_WIDTH + 10;
-  int buttonY = 175; // Below mode buttons
-  int buttonW = 70;
-  int buttonH = 35;
-
-  // Title
-  fl_color(0, 0, 0);
-  BitmapFont::drawText("Open:", buttonX, buttonY - 25, 2);
-
-  // Button: Standard
-  if (selectedOpening == Opening::STANDARD)
-    fl_color(150, 255, 150);
-  else
-    fl_color(100, 200, 100);
-  fl_rectf(buttonX, buttonY, buttonW, buttonH);
-  fl_color(0, 0, 0);
-  fl_rect(buttonX, buttonY, buttonW, buttonH);
-  BitmapFont::drawText("STD", buttonX + 12, buttonY + 10, 1);
-
-  // Button: Pro
-  if (selectedOpening == Opening::PRO)
-    fl_color(150, 200, 255);
-  else
-    fl_color(100, 150, 200);
-  fl_rectf(buttonX, buttonY + buttonH + 5, buttonW, buttonH);
-  fl_color(0, 0, 0);
-  fl_rect(buttonX, buttonY + buttonH + 5, buttonW, buttonH);
-  BitmapFont::drawText("PRO", buttonX + 12, buttonY + buttonH + 15, 1);
-
-  // Button: Swap
-  if (selectedOpening == Opening::SWAP)
-    fl_color(255, 200, 150);
-  else
-    fl_color(200, 150, 100);
-  fl_rectf(buttonX, buttonY + 2 * (buttonH + 5), buttonW, buttonH);
-  fl_color(0, 0, 0);
-  fl_rect(buttonX, buttonY + 2 * (buttonH + 5), buttonW, buttonH);
-  BitmapFont::drawText("SWAP", buttonX + 8, buttonY + 2 * (buttonH + 5) + 10,
-                       1);
-
-  // Button: Swap2
-  if (selectedOpening == Opening::SWAP2)
-    fl_color(255, 150, 200);
-  else
-    fl_color(200, 100, 150);
-  fl_rectf(buttonX, buttonY + 3 * (buttonH + 5), buttonW, buttonH);
-  fl_color(0, 0, 0);
-  fl_rect(buttonX, buttonY + 3 * (buttonH + 5), buttonW, buttonH);
-  BitmapFont::drawText("SW2", buttonX + 12, buttonY + 3 * (buttonH + 5) + 10,
-                       1);
-}
-
 int GomokuBoard::handle(int event) {
 
   if (event == FL_PUSH && Fl::event_button() == FL_LEFT_MOUSE) {
     if (clickedModeButton(Fl::event_x(), Fl::event_y())) {
       reset();
-      redraw();
-      return 1;
-    }
-    if (clickedOpeningButton(Fl::event_x(), Fl::event_y())) {
       redraw();
       return 1;
     }
@@ -633,7 +570,15 @@ int GomokuBoard::handle(int event) {
     if (key == 's' || key == 'S') {
       if (gameMode == GameMode::TWO_PLAYER && winner == Stone::EMPTY) {
         showSuggestion = !showSuggestion;
-        // TODO: Calculate suggested move using minimax
+        if (showSuggestion) {
+          // Calculate suggested move using minimax
+          Stone opponent =
+              (currentPlayer == Stone::BLACK) ? Stone::WHITE : Stone::BLACK;
+          Minimax m(currentPlayer, opponent);
+          Coord lastMove = {-1, -1};
+          suggestedMove =
+              m.minimax(grid, lastMove, 10, currentPlayer, opponent);
+        }
         redraw();
       }
       return 1;
@@ -665,7 +610,7 @@ void GomokuBoard::makeAIMove() {
   Minimax m(aiColor, playerColor);
   Coord lastMove = {-1, -1};
 
-  // currently only till depth 6 then below 500ms damm
+  // depth 10 within 500ms but is the minimax written correctly????
   MinimaxResult aiResult =
       m.minimax(grid, lastMove, 10, aiColor, playerColor, true);
 
@@ -778,7 +723,6 @@ bool GomokuBoard::clickedModeButton(int x, int y) {
   int buttonW = 70;
   int buttonH = 35;
 
-  // Button: 2-Player (y: 50-85)
   if (x >= buttonX && x <= buttonX + buttonW && y >= buttonY &&
       y <= buttonY + buttonH) {
     if (gameMode != GameMode::TWO_PLAYER) {
@@ -787,7 +731,6 @@ bool GomokuBoard::clickedModeButton(int x, int y) {
     }
     return false;
   }
-  // Button: AI vs Human (y: 90-125)
   if (x >= buttonX && x <= buttonX + buttonW && y >= buttonY + buttonH + 5 &&
       y <= buttonY + 2 * buttonH + 5) {
     if (gameMode != GameMode::AI_VS_HUMAN) {
@@ -798,54 +741,5 @@ bool GomokuBoard::clickedModeButton(int x, int y) {
     return false;
   }
 
-  return false;
-}
-
-void GomokuBoard::initializeOpening(Opening opening) {
-  selectedOpening = opening;
-  gameStarted = true;
-
-  // Place opening stones if needed
-  if (opening == Opening::PRO) {
-    // Place stones at opposite corners
-    grid[3][3] = Stone::BLACK;
-    grid[15][15] = Stone::WHITE;
-    blackMoveCount = 1;
-    whiteMoveCount = 1;
-  }
-}
-
-bool GomokuBoard::clickedOpeningButton(int x, int y) {
-  int buttonX = OFFSET + BOARD_WIDTH + 10;
-  int buttonY = 175;
-  int buttonW = 70;
-  int buttonH = 35;
-
-  if (x >= buttonX && x <= buttonX + buttonW && y >= buttonY &&
-      y <= buttonY + buttonH) {
-    selectedOpening = Opening::STANDARD;
-    redraw();
-    return true;
-  }
-  if (x >= buttonX && x <= buttonX + buttonW && y >= buttonY + buttonH + 5 &&
-      y <= buttonY + 2 * buttonH + 5) {
-    selectedOpening = Opening::PRO;
-    redraw();
-    return true;
-  }
-  if (x >= buttonX && x <= buttonX + buttonW &&
-      y >= buttonY + 2 * (buttonH + 5) &&
-      y <= buttonY + 3 * (buttonH + 5) - 5) {
-    selectedOpening = Opening::SWAP;
-    redraw();
-    return true;
-  }
-  if (x >= buttonX && x <= buttonX + buttonW &&
-      y >= buttonY + 3 * (buttonH + 5) &&
-      y <= buttonY + 4 * (buttonH + 5) - 5) {
-    selectedOpening = Opening::SWAP2;
-    redraw();
-    return true;
-  }
   return false;
 }
