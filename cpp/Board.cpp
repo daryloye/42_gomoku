@@ -30,6 +30,7 @@ void GomokuBoard::reset() {
   isAiThinking = false;
   aiThinkTime = 0.0f;
   showSuggestion = false;
+  suggestionForPlayer = Stone::EMPTY;
   showHeatmap = false;
   heatmapNeedsRedraw = false;
   timer.resetAll();
@@ -150,6 +151,7 @@ void GomokuBoard::drawModeButtons() {
   fl_color(0, 0, 0);
   BitmapFont::drawText("Mode:", buttonX, buttonY - 25, 2);
 
+  // 2-Player button
   if (gameMode == GameMode::TWO_PLAYER)
     fl_color(150, 255, 150);
   else
@@ -159,6 +161,7 @@ void GomokuBoard::drawModeButtons() {
   fl_rect(buttonX, buttonY, buttonW, buttonH);
   BitmapFont::drawText("2-PLY", buttonX + 5, buttonY + 10, 1);
 
+  // AI vs Human button
   if (gameMode == GameMode::AI_VS_HUMAN)
     fl_color(150, 200, 255);
   else
@@ -167,6 +170,17 @@ void GomokuBoard::drawModeButtons() {
   fl_color(0, 0, 0);
   fl_rect(buttonX, buttonY + buttonH + 5, buttonW, buttonH);
   BitmapFont::drawText("AI", buttonX + 15, buttonY + buttonH + 15, 1);
+
+  // AI vs AI button
+  if (gameMode == GameMode::AI_VS_AI)
+    fl_color(255, 200, 150);
+  else
+    fl_color(200, 150, 100);
+  fl_rectf(buttonX, buttonY + 2 * (buttonH + 5), buttonW, buttonH);
+  fl_color(0, 0, 0);
+  fl_rect(buttonX, buttonY + 2 * (buttonH + 5), buttonW, buttonH);
+  BitmapFont::drawText("AI-AI", buttonX + 5, buttonY + 2 * (buttonH + 5) + 10,
+                       1);
 }
 
 void GomokuBoard::drawBoard() {
@@ -237,7 +251,14 @@ void GomokuBoard::drawBoard() {
   if (showSuggestion && suggestedMove.move.x >= 0) {
     int sx = boardStartX + suggestedMove.move.x * CELL_SIZE;
     int sy = boardStartY + suggestedMove.move.y * CELL_SIZE;
-    fl_color(200, 100, 0);
+
+    // Use different colors for black and white suggestions
+    if (suggestionForPlayer == Stone::BLACK) {
+      fl_color(80, 80, 80); // Dark gray for black
+    } else {
+      fl_color(220, 220, 220); // Light gray for white
+    }
+
     fl_line_style(FL_SOLID, 3);
     fl_arc(sx - r - 5, sy - r - 5, (r + 5) * 2, (r + 5) * 2, 0, 360);
     fl_line_style(FL_SOLID, 2);
@@ -344,9 +365,14 @@ void GomokuBoard::drawUI() {
     BitmapFont::drawText(playerText, OFFSET, 35, 2);
   }
 
-  const char *modeText = (gameMode == GameMode::TWO_PLAYER)
-                             ? "Mode: 2-Player"
-                             : "Mode: AI vs Human";
+  const char *modeText;
+  if (gameMode == GameMode::TWO_PLAYER) {
+    modeText = "Mode: 2-Player";
+  } else if (gameMode == GameMode::AI_VS_HUMAN) {
+    modeText = "Mode: AI vs Human";
+  } else {
+    modeText = "Mode: AI vs AI";
+  }
   BitmapFont::drawText(modeText, OFFSET + 450, 35, 2);
 
   char blackTimeStr[80];
@@ -365,9 +391,14 @@ void GomokuBoard::drawUI() {
   BitmapFont::drawText(whiteTimeStr, OFFSET, h() - TEXT_MARGIN + 15, 1);
   BitmapFont::drawText(blackTimeStr, OFFSET, h() - TEXT_MARGIN - 5, 1);
 
-  const char *helpText = (gameMode == GameMode::AI_VS_HUMAN)
-                             ? "Press 'R' to reset | Press 'H' for heatmap"
-                             : "Press 'R' to reset | Press 'S' for suggestion";
+  const char *helpText;
+  if (gameMode == GameMode::TWO_PLAYER) {
+    helpText = "Press 'R' to reset | Press 'S' for suggestion";
+  } else if (gameMode == GameMode::AI_VS_HUMAN) {
+    helpText = "Press 'R' to reset | Press 'H' for heatmap";
+  } else {
+    helpText = "Press 'R' to reset | Press 'H' for heatmap";
+  }
   BitmapFont::drawText(helpText, OFFSET, h() - 25, 1);
 }
 
@@ -376,6 +407,17 @@ int GomokuBoard::handle(int event) {
   if (event == FL_PUSH && Fl::event_button() == FL_LEFT_MOUSE) {
     if (clickedModeButton(Fl::event_x(), Fl::event_y())) {
       reset();
+      if (gameMode == GameMode::AI_VS_AI) {
+        isAiThinking = true;
+        aiThinkStartTime = std::chrono::steady_clock::now();
+        Fl::add_timeout(
+            0.01, // Minimal timeout to allow UI to update
+            [](void *v) {
+              GomokuBoard *board = (GomokuBoard *)v;
+              board->makeAIMove();
+            },
+            this);
+      }
       redraw();
       return 1;
     }
@@ -391,7 +433,21 @@ int GomokuBoard::handle(int event) {
     } else if (key == '2') {
       gameMode = GameMode::AI_VS_HUMAN;
       reset();
-      aiColor = Stone::WHITE; // AI plays as WHITE
+      aiColor = Stone::WHITE;
+      redraw();
+      return 1;
+    } else if (key == '3') {
+      gameMode = GameMode::AI_VS_AI;
+      reset();
+      isAiThinking = true;
+      aiThinkStartTime = std::chrono::steady_clock::now();
+      Fl::add_timeout(
+          0.01, // Minimal timeout to allow UI to update
+          [](void *v) {
+            GomokuBoard *board = (GomokuBoard *)v;
+            board->makeAIMove();
+          },
+          this);
       redraw();
       return 1;
     }
@@ -399,6 +455,16 @@ int GomokuBoard::handle(int event) {
 
   // Show outline when mouse moves
   if (event == FL_MOVE) {
+    // Don't show outline if game is over
+    if (winner != Stone::EMPTY) {
+      return 1;
+    }
+
+    // Don't show outline in AI vs AI mode
+    if (gameMode == GameMode::AI_VS_AI) {
+      return 1;
+    }
+
     Coord cell = windowToBoardCoordinates({Fl::event_x(), Fl::event_y()});
     if (!isValidMove(cell, grid))
       return 1;
@@ -412,7 +478,11 @@ int GomokuBoard::handle(int event) {
 
   // Left click to place stone
   if (event == FL_PUSH && Fl::event_button() == FL_LEFT_MOUSE) {
-    // In AI mode, only allow human to click during their turn
+    // In AI vs AI mode, don't allow human to place stones
+    if (gameMode == GameMode::AI_VS_AI)
+      return 1;
+
+    // In AI vs Human mode, only allow human to click during their turn
     if (gameMode == GameMode::AI_VS_HUMAN && currentPlayer == aiColor)
       return 1;
 
@@ -533,6 +603,9 @@ int GomokuBoard::handle(int event) {
 
     if (winByAlignment || winByCapture || winByCaptureThreat) {
       winner = currentPlayer;
+      // Clear outline stone when game ends
+      setStone(previousOutlineCell, Stone::EMPTY);
+      previousOutlineCell = {-1, -1};
     } else {
       currentPlayer =
           (currentPlayer == Stone::BLACK) ? Stone::WHITE : Stone::BLACK;
@@ -544,11 +617,26 @@ int GomokuBoard::handle(int event) {
             0.01,
             [](void *v) {
               GomokuBoard *board = (GomokuBoard *)v;
-              if (board->isAiThinking) {
-                board->makeAIMove();
-              }
+              board->makeAIMove();
             },
             this);
+      }
+
+      if (gameMode == GameMode::AI_VS_AI) {
+        isAiThinking = true;
+        aiThinkStartTime = std::chrono::steady_clock::now();
+        Fl::add_timeout(
+            0.01,
+            [](void *v) {
+              GomokuBoard *board = (GomokuBoard *)v;
+              board->makeAIMove();
+            },
+            this);
+      }
+
+      // Auto-update suggestion for next turn if suggestion is enabled
+      if (showSuggestion) {
+        updateSuggestion();
       }
     }
 
@@ -556,7 +644,6 @@ int GomokuBoard::handle(int event) {
     redraw();
   }
 
-  // Additional keyboard shortcuts
   if (event == FL_KEYDOWN) {
     int key = Fl::event_key();
 
@@ -566,27 +653,19 @@ int GomokuBoard::handle(int event) {
       return 1;
     }
 
-    // Press 'S' for move suggestion (hotseat feature)
     if (key == 's' || key == 'S') {
       if (gameMode == GameMode::TWO_PLAYER && winner == Stone::EMPTY) {
         showSuggestion = !showSuggestion;
         if (showSuggestion) {
-          // Calculate suggested move using minimax
-          Stone opponent =
-              (currentPlayer == Stone::BLACK) ? Stone::WHITE : Stone::BLACK;
-          Minimax m(currentPlayer, opponent);
-          Coord lastMove = {-1, -1};
-          suggestedMove =
-              m.minimax(grid, lastMove, 10, currentPlayer, opponent);
+          updateSuggestion();
         }
         redraw();
       }
       return 1;
     }
 
-    // Press 'H' to toggle AI evaluation heatmap
     if (key == 'h' || key == 'H') {
-      if (gameMode == GameMode::AI_VS_HUMAN) {
+      if (gameMode == GameMode::AI_VS_HUMAN || gameMode == GameMode::AI_VS_AI) {
         showHeatmap = !showHeatmap;
         if (showHeatmap) {
           heatmapNeedsRedraw = true;
@@ -601,18 +680,24 @@ int GomokuBoard::handle(int event) {
 }
 
 void GomokuBoard::makeAIMove() {
-  if (currentPlayer != aiColor || gameMode != GameMode::AI_VS_HUMAN) {
+  if (gameMode == GameMode::AI_VS_HUMAN && currentPlayer != aiColor) {
     isAiThinking = false;
     return;
   }
 
-  Stone playerColor = Stone::BLACK;
-  Minimax m(aiColor, playerColor);
+  if (gameMode == GameMode::TWO_PLAYER) {
+    isAiThinking = false;
+    return;
+  }
+
+  Stone opponentColor =
+      (currentPlayer == Stone::BLACK) ? Stone::WHITE : Stone::BLACK;
+
+  Minimax m(currentPlayer, opponentColor);
   Coord lastMove = {-1, -1};
 
-  // depth 10 within 500ms but is the minimax written correctly????
   MinimaxResult aiResult =
-      m.minimax(grid, lastMove, 10, aiColor, playerColor, true);
+      m.minimax(grid, lastMove, 10, currentPlayer, opponentColor);
 
   lastEvaluationHeatmap = m.getEvaluationHeatmap();
   heatmapNeedsRedraw = true;
@@ -632,7 +717,6 @@ void GomokuBoard::makeAIMove() {
     whiteCaptured += capturedPairs;
   }
 
-  // Remove captured stones
   if (capturedPairs > 0) {
     Stone opponent =
         (currentPlayer == Stone::BLACK) ? Stone::WHITE : Stone::BLACK;
@@ -699,6 +783,8 @@ void GomokuBoard::makeAIMove() {
 
   if (winByAlignment || winByCapture || winByCaptureThreat) {
     winner = currentPlayer;
+    setStone(previousOutlineCell, Stone::EMPTY);
+    previousOutlineCell = {-1, -1};
   } else {
     currentPlayer =
         (currentPlayer == Stone::BLACK) ? Stone::WHITE : Stone::BLACK;
@@ -709,12 +795,26 @@ void GomokuBoard::makeAIMove() {
       now - aiThinkStartTime);
   aiThinkTime = thinkDuration.count();
 
-  timer.calculateTimeSpentOnMove(aiColor);
+  Stone timeTrackingPlayer =
+      (gameMode == GameMode::AI_VS_AI) ? currentPlayer : aiColor;
+  timer.calculateTimeSpentOnMove(timeTrackingPlayer);
 
   timer.resetTimer();
 
   isAiThinking = false;
   redraw();
+
+  if (gameMode == GameMode::AI_VS_AI && winner == Stone::EMPTY) {
+    isAiThinking = true;
+    aiThinkStartTime = std::chrono::steady_clock::now();
+    Fl::add_timeout(
+        0.01,
+        [](void *v) {
+          GomokuBoard *board = (GomokuBoard *)v;
+          board->makeAIMove();
+        },
+        this);
+  }
 }
 
 bool GomokuBoard::clickedModeButton(int x, int y) {
@@ -731,6 +831,7 @@ bool GomokuBoard::clickedModeButton(int x, int y) {
     }
     return false;
   }
+
   if (x >= buttonX && x <= buttonX + buttonW && y >= buttonY + buttonH + 5 &&
       y <= buttonY + 2 * buttonH + 5) {
     if (gameMode != GameMode::AI_VS_HUMAN) {
@@ -741,5 +842,27 @@ bool GomokuBoard::clickedModeButton(int x, int y) {
     return false;
   }
 
+  if (x >= buttonX && x <= buttonX + buttonW &&
+      y >= buttonY + 2 * (buttonH + 5) && y <= buttonY + 3 * buttonH + 10) {
+    if (gameMode != GameMode::AI_VS_AI) {
+      gameMode = GameMode::AI_VS_AI;
+      return true;
+    }
+    return false;
+  }
+
   return false;
+}
+
+void GomokuBoard::updateSuggestion() {
+  if (gameMode != GameMode::TWO_PLAYER || winner != Stone::EMPTY) {
+    return;
+  }
+
+  Stone opponent =
+      (currentPlayer == Stone::BLACK) ? Stone::WHITE : Stone::BLACK;
+  Minimax m(currentPlayer, opponent);
+  Coord lastMove = {-1, -1};
+  suggestedMove = m.minimax(grid, lastMove, 10, currentPlayer, opponent);
+  suggestionForPlayer = currentPlayer;
 }
