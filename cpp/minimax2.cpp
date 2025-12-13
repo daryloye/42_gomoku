@@ -8,18 +8,17 @@ Minimax::Minimax(const Stone aiColour, const Stone opponentColour)
 
 Minimax::~Minimax() {}
 
+// how many different evaluation criteria is required i wonder...
 MinimaxResult Minimax::minimax(const Grid &grid, Coord lastMove, int depth,
                                Stone currentColour, Stone prevColour, int alpha,
                                int beta) {
   if (lastMove.x >= 0 && lastMove.y >= 0 &&
-      hasPlayerWon(lastMove, prevColour, grid)) {
+      hasPlayerWon(lastMove, prevColour, grid))
     return {(prevColour == _aiColour) ? 1000000000 : -1000000000, lastMove};
-  }
 
   std::vector<Coord> moves = getPossibleMoves(grid);
-  for (Coord move : moves) {
+  for (Coord move : moves)
     _evaluationCount[move.y][move.x]++;
-  }
 
   if (currentColour == _aiColour) {
     for (Coord move : moves) {
@@ -126,13 +125,11 @@ std::vector<Coord> Minimax::getPossibleMoves(const Grid &grid) {
     }
   }
 
-  // First move: return center position
   if (stoneCount == 0) {
     ret.push_back({BOARD_SIZE / 2, BOARD_SIZE / 2});
     return ret;
   }
 
-  // Apply move restriction to ENTIRE game for depth 10 to work
   std::set<std::pair<int, int>> candidates;
   for (int y = 0; y < BOARD_SIZE; y++) {
     for (int x = 0; x < BOARD_SIZE; x++) {
@@ -149,7 +146,6 @@ std::vector<Coord> Minimax::getPossibleMoves(const Grid &grid) {
     }
   }
 
-  // Convert set to vector for sorting
   std::vector<Coord> allMoves;
   for (const auto &c : candidates) {
     if (isValidMove({c.first, c.second}, grid)) {
@@ -190,24 +186,20 @@ std::vector<Coord> Minimax::getPossibleMoves(const Grid &grid) {
     int ourThreatA = count_x_in_a_row(a, us, tmpA_off);
     int ourThreatB = count_x_in_a_row(b, us, tmpB_off);
 
-    // EXTREME defensive priority: Weight blocking 2000x more than offense!
-    // AI will ALWAYS prioritize defense, leading to very long games
     int scoreA = opponentThreatA * 2000 + ourThreatA;
     int scoreB = opponentThreatB * 2000 + ourThreatB;
 
     return scoreA > scoreB;
   });
 
-  // MAXIMUM moves for extreme defensive coverage
-  int maxMoves = 7; // More moves = much longer games, better blocking
+  int maxMoves = 7;
   if (stoneCount <= 2) {
-    maxMoves = 3; // Very early game: keep fast
+    maxMoves = 3;
   } else if (stoneCount <= 6) {
-    maxMoves = 5; // Early game
+    maxMoves = 5;
   } else if (stoneCount <= 12) {
-    maxMoves = 6; // Mid game
+    maxMoves = 6;
   }
-  // Late game (>12 stones): 7 moves for extreme defensive options
 
   int count = 0;
   for (const auto &move : allMoves) {
@@ -242,10 +234,10 @@ void Minimax::evaluateDirection(Coord pos, int dy, int dx, Stone colour,
       countConsecutive({pos.x + dx, pos.y + dy}, dy, dx, colour, grid);
   int backward =
       countConsecutive({pos.x - dx, pos.y - dy}, -dy, -dx, colour, grid);
-  int total = forward + backward + 1; // +1 for the stone at pos
+  int total = forward + backward + 1;
 
   if (total < 2)
-    return; // Single stones don't contribute
+    return;
 
   int forwardY = pos.y + (forward + 1) * dy;
   int forwardX = pos.x + (forward + 1) * dx;
@@ -271,26 +263,22 @@ void Minimax::evaluateDirection(Coord pos, int dy, int dx, Stone colour,
     else
       score += 100;
   } else if (total == 3) {
-    // VERY HIGH value for 3-in-a-row to ensure blocking
     if (openEnds == 2)
-      score += 2000; // Doubled again!
+      score += 2000;
     else if (openEnds == 1)
       score += 200;
     else
       score += 20;
   } else if (total == 2) {
-    // HIGH value for 2-in-a-row to block early threats
     if (openEnds == 2)
-      score += 100; // Doubled!
+      score += 100;
     else if (openEnds == 1)
       score += 20;
   }
 
-  // Even single stones get some value if open on both sides
-  // This makes AI consider blocking potential future threats
   if (total == 1) {
     if (openEnds == 2) {
-      score += 5; // New: consider isolated stones
+      score += 5;
     }
   }
 }
@@ -315,6 +303,5 @@ int Minimax::evaluateMove(const Grid &grid) {
     }
   }
 
-  // MAXIMUM defensive weight (10x!) - AI obsessed with blocking
   return aiScore - (oppScore * 10);
 }
