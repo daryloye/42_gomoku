@@ -2,6 +2,9 @@
 #define BITMAPFONT_HPP
 
 #include <string>
+#include <FL/fl_draw.H>
+
+#include "IBM_VGA_8x16.h"
 
 class BitmapFont {
 public:

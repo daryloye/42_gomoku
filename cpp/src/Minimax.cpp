@@ -14,10 +14,6 @@ Minimax::~Minimax() {}
 MinimaxResult Minimax::minimax(const Grid &grid, Coord lastMove, int depth,
                                Stone currentColour, Stone prevColour,
                                float alpha, float beta) {
-  // std::cout << std::endl;
-  // std::cout << "level: " << depth
-  // << " currentColour: " << stoneColourToString(currentColour)
-  // << " prevColour: " << stoneColourToString(prevColour) << std::endl;
 
   if (hasPlayerWon(lastMove, prevColour, grid)) {
     std::cout << "player has won" << std::endl;

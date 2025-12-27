@@ -13,22 +13,17 @@ Coord windowToBoardCoordinates(Coord windowCoords) {
   return Coord{board_x, board_y};
 };
 
-std::string stoneColourToString(Stone stone) {
+std::ostream& operator<< (std::ostream& os, Stone stone) {
   switch (stone) {
-    case Stone::EMPTY:
-      return "EMPTY";
-    case Stone::BLACK:
-      return "BLACK";
-    case Stone::WHITE:
-      return "WHITE";
-    case Stone::OUTLINE:
-      return "OUTLINE";
+    case Stone::EMPTY:    os << "EMPTY";    break;
+    case Stone::BLACK:    os << "BLACK";    break;
+    case Stone::WHITE:    os << "WHITE";    break;
+    case Stone::OUTLINE:  os << "OUTLINE";  break;
   }
-  return "";
+  return os;
 };
 
-std::string coordToString(Coord coord) {
-  char buffer[100];
-  sprintf(buffer, "(%d, %d)", coord.x, coord.y);
-  return buffer;
+std::ostream& operator<< (std::ostream& os, Coord coord) {
+  os << "(" << coord.x << ", " << coord.y << ")";
+  return os;
 }

@@ -1,7 +1,5 @@
 #include "BitmapFont.hpp"
-#include <FL/fl_draw.H>
 // https://github.com/spacerace/romfont/tree/master/font-headers
-#include "IBM_VGA_8x16.h"
 
 void BitmapFont::drawText(const std::string& text, int x, int y, int scale)
 {
