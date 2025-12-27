@@ -8,7 +8,7 @@ public:
 
   MinimaxResult minimax(const Grid &grid, Coord lastMove, int depth,
                         Stone currentColour, Stone prevColour,
-                        int alpha = -1000000000, int beta = 1000000000);
+                        int alpha = INT_MIN, int beta = INT_MAX);
 
   const CountGrid &getEvaluationHeatmap() const { return _evaluationCount; }
   void resetHeatmap() {

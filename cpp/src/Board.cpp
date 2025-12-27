@@ -422,10 +422,8 @@ void GomokuBoard::makeAIMove() {
       (currentPlayer == Stone::BLACK) ? Stone::WHITE : Stone::BLACK;
 
   Minimax m(currentPlayer, opponentColor);
-  Coord lastMove = {-1, -1};
-
   MinimaxResult aiResult =
-      m.minimax(grid, lastMove, 10, currentPlayer, opponentColor);
+      m.minimax(grid, {-1, -1}, 10, currentPlayer, opponentColor);
 
   lastEvaluationHeatmap = m.getEvaluationHeatmap();
   heatmapNeedsRedraw = true;

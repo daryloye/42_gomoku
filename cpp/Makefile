@@ -14,7 +14,7 @@ SRCS			=	src/main.cpp \
 						src/BoardDraw.cpp \
 						src/Timer.cpp \
 						src/WinRules.cpp \
-						src/Minimax2.cpp \
+						src/Minimax.cpp \
 						src/Utils.cpp \
 						src/BitmapFont.cpp
 

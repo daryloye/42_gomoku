@@ -13,19 +13,16 @@ Minimax::~Minimax() {}
 // 	- beta: best score for opponent so far
 MinimaxResult Minimax::minimax(const Grid &grid, Coord lastMove, int depth,
                                Stone currentColour, Stone prevColour,
-                               float alpha, float beta) {
+                               int alpha, int beta) {
 
-  if (hasPlayerWon(lastMove, prevColour, grid)) {
-    std::cout << "player has won" << std::endl;
-    return {(prevColour == _aiColour) ? 1.0e+10f : -1.0e+10f, lastMove};
+  if (lastMove.x > 0 && hasPlayerWon(lastMove, prevColour, grid)) {
+    return {(prevColour == _aiColour) ? INT_MAX : INT_MIN, lastMove};
   }
 
   std::vector<Coord> moves = getPossibleMoves(grid);
-  for (Coord move : moves) {
-    _evaluationCount[move.y][move.x]++;
-    // Only commenting this line out improve speed drastically
-    // std::cout << "checking: " << coordToString(move) << std::endl;
-  }
+  // for (Coord move : moves) {
+  //   _evaluationCount[move.y][move.x]++;
+  // }
 
   // AI seems to be prioritising making threats of 3-4 in a row, but does not go
   // for wins or prevent opp from making wins
@@ -55,8 +52,8 @@ MinimaxResult Minimax::minimax(const Grid &grid, Coord lastMove, int depth,
   }
 
   MinimaxResult best = (currentColour == _aiColour)
-                           ? MinimaxResult{NEG_INFINITY, {}}
-                           : MinimaxResult{POS_INFINITY, {}};
+                           ? MinimaxResult{-INFINITY, {}}
+                           : MinimaxResult{INFINITY, {}};
 
   for (Coord move : moves) {
     auto new_grid = grid;

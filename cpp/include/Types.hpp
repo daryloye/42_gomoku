@@ -3,8 +3,8 @@
 
 #include "Config.hpp"
 
-constexpr float POS_INFINITY = std::numeric_limits<float>::infinity();
-constexpr float NEG_INFINITY = -std::numeric_limits<float>::infinity();
+constexpr int INT_MAX = std::numeric_limits<int>::max();
+constexpr int INT_MIN = std::numeric_limits<int>::min();
 
 enum class Stone {
   EMPTY = 0,

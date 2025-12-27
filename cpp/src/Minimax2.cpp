@@ -10,8 +10,8 @@ Minimax::~Minimax() {}
 
 // how many different evaluation criteria is required i wonder...
 MinimaxResult Minimax::minimax(const Grid &grid, Coord lastMove, int depth,
-                               Stone currentColour, Stone prevColour, int alpha,
-                               int beta) {
+                               Stone currentColour, Stone prevColour, float alpha,
+                               float beta) {
   if (lastMove.x >= 0 && lastMove.y >= 0 &&
       hasPlayerWon(lastMove, prevColour, grid))
     return {(prevColour == _aiColour) ? 1000000000 : -1000000000, lastMove};
