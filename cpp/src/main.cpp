@@ -4,7 +4,8 @@
 
 static GomokuBoard* g_board = nullptr;
 
-void deleteBoard(void) {
+void deleteBoard(void)
+{
 	if (g_board)
 	{
 		delete g_board;
@@ -18,14 +19,17 @@ static void signal_handler(int sig __attribute__((unused)))
 	exit(0);
 }
 
+// This error hanndling is to prevent game crash and graceful shutdown of program.
 int main(int argc, char* argv[])
 {
-	try {
+	try
+  {
 		signal(SIGINT, signal_handler);
 		signal(SIGTERM, signal_handler);
 
 		g_board = new GomokuBoard();
-		if (!g_board) {
+		if (!g_board)
+    {
 			std::cerr << "Error: Failed to allocate memory for game board" << std::endl;
 			return 1;
 		}
@@ -35,17 +39,20 @@ int main(int argc, char* argv[])
 		deleteBoard();
 		return 0;
 	}
-	catch (const std::bad_alloc& e) {
+	catch (const std::bad_alloc& e)
+  {
 		std::cerr << "Error: Out of memory - " << e.what() << std::endl;
 		deleteBoard();
 		return 1;
 	}
-	catch (const std::exception& e) {
+	catch (const std::exception& e)
+  {
 		std::cerr << "Error: Exception occurred - " << e.what() << std::endl;
 		deleteBoard();
 		return 1;
 	}
-	catch (...) {
+	catch (...)
+  {
 		std::cerr << "Error: Unknown exception occurred" << std::endl;
 		deleteBoard();
 		return 1;

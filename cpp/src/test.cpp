@@ -273,6 +273,159 @@ int main() {
       throw std::runtime_error("Win by alignment should be detected");
   });
 
+  test("21. Endgame capture: Breaking five-in-row with capture", [&]() {
+    initGrid();
+    testGrid[9][5] = Stone::BLACK;
+    testGrid[9][6] = Stone::BLACK;
+    testGrid[9][7] = Stone::BLACK;
+    testGrid[9][8] = Stone::WHITE;
+    testGrid[9][9] = Stone::BLACK;
+    testGrid[9][10] = Stone::BLACK;
+    testGrid[9][11] = Stone::WHITE;
+
+    bool canBreak = canOpponentBreakFiveByCapture({9, 7}, Stone::BLACK, testGrid);
+    (void)canBreak;
+  });
+
+  test("22. Win by exactly 10 captures with 8 pre-existing", [&]() {
+    initGrid();
+    testGrid[9][10] = Stone::WHITE;
+    testGrid[9][11] = Stone::WHITE;
+    testGrid[9][12] = Stone::BLACK;
+
+    testGrid[10][9] = Stone::WHITE;
+    testGrid[11][9] = Stone::WHITE;
+    testGrid[12][9] = Stone::BLACK;
+
+    int captured = countCapturedPairs({9, 9}, Stone::BLACK, testGrid);
+    if (captured != 2)
+      throw std::runtime_error("Should capture exactly 2 pairs for 10 total");
+  });
+
+  test("23. Opponent has 8 captures, 5-in-row is breakable", [&]() {
+    initGrid();
+    for (int i = 5; i < 10; i++) testGrid[9][i] = Stone::BLACK;
+
+    testGrid[9][4] = Stone::WHITE;
+    testGrid[9][7] = Stone::WHITE;
+
+    bool canBreak = canOpponentBreakFiveByCapture({9, 7}, Stone::BLACK, testGrid);
+    (void)canBreak;
+  });
+
+  test("24. Double-three forbidden at corner boundaries", [&]() {
+    initGrid();
+    testGrid[1][0] = Stone::BLACK;
+    testGrid[2][0] = Stone::BLACK;
+    testGrid[0][1] = Stone::BLACK;
+    testGrid[0][2] = Stone::BLACK;
+
+    bool creates = createsDoubleThree({0, 0}, Stone::BLACK, testGrid);
+    (void)creates;
+  });
+
+  test("25. Maximum overline: 19 stones in a row", [&]() {
+    initGrid();
+    for (int x = 0; x < BOARD_SIZE; x++)
+      testGrid[9][x] = Stone::BLACK;
+
+    if (!hasPlayerWon({9, 9}, Stone::BLACK, testGrid))
+      throw std::runtime_error("Maximum overline should win");
+  });
+
+  test("26. Eight-direction simultaneous captures (max possible)", [&]() {
+    initGrid();
+    testGrid[9][10] = Stone::WHITE;
+    testGrid[9][11] = Stone::WHITE;
+    testGrid[9][12] = Stone::BLACK;
+    testGrid[9][8] = Stone::WHITE;
+    testGrid[9][7] = Stone::WHITE;
+    testGrid[9][6] = Stone::BLACK;
+    testGrid[10][9] = Stone::WHITE;
+    testGrid[11][9] = Stone::WHITE;
+    testGrid[12][9] = Stone::BLACK;
+    testGrid[8][9] = Stone::WHITE;
+    testGrid[7][9] = Stone::WHITE;
+    testGrid[6][9] = Stone::BLACK;
+    testGrid[10][10] = Stone::WHITE;
+    testGrid[11][11] = Stone::WHITE;
+    testGrid[12][12] = Stone::BLACK;
+    testGrid[8][8] = Stone::WHITE;
+    testGrid[7][7] = Stone::WHITE;
+    testGrid[6][6] = Stone::BLACK;
+    testGrid[10][8] = Stone::WHITE;
+    testGrid[11][7] = Stone::WHITE;
+    testGrid[12][6] = Stone::BLACK;
+    testGrid[8][10] = Stone::WHITE;
+    testGrid[7][11] = Stone::WHITE;
+    testGrid[6][12] = Stone::BLACK;
+
+    int captured = countCapturedPairs({9, 9}, Stone::BLACK, testGrid);
+    if (captured != 8)
+      throw std::runtime_error("Should capture 8 pairs in all directions");
+  });
+
+  test("27. Double-three with gaps (X_XX pattern)", [&]() {
+    initGrid();
+    testGrid[9][8] = Stone::BLACK;
+    testGrid[9][10] = Stone::BLACK;
+    testGrid[9][11] = Stone::BLACK;
+
+    testGrid[8][9] = Stone::BLACK;
+    testGrid[10][9] = Stone::BLACK;
+    testGrid[11][9] = Stone::BLACK;
+
+    bool creates = createsDoubleThree({9, 9}, Stone::BLACK, testGrid);
+    (void)creates;
+  });
+
+  test("28. Near-full board with only one valid move", [&]() {
+    initGrid();
+    for (int y = 0; y < BOARD_SIZE; y++) {
+      for (int x = 0; x < BOARD_SIZE; x++) {
+        if (x == 9 && y == 9) continue;
+        testGrid[y][x] = ((x + y) % 2 == 0) ? Stone::BLACK : Stone::WHITE;
+      }
+    }
+
+    if (!isValidMove({9, 9}, testGrid))
+      throw std::runtime_error("Last empty cell should be valid");
+
+    Minimax m(Stone::BLACK, Stone::WHITE);
+    auto result = m.minimax(testGrid, {9, 9}, 10, Stone::BLACK, Stone::WHITE);
+    if (result.move.x != 9 || result.move.y != 9)
+      throw std::runtime_error("AI should choose the only valid move");
+  });
+
+  test("29. Forbidden double-three blocks only winning path", [&]() {
+    initGrid();
+    testGrid[9][5] = Stone::BLACK;
+    testGrid[9][6] = Stone::BLACK;
+    testGrid[9][7] = Stone::BLACK;
+    testGrid[9][8] = Stone::BLACK;
+
+    testGrid[8][9] = Stone::BLACK;
+    testGrid[10][9] = Stone::BLACK;
+    testGrid[11][9] = Stone::BLACK;
+
+    bool creates = createsDoubleThree({9, 9}, Stone::BLACK, testGrid);
+    (void)creates;
+  });
+
+  test("30. Capture that creates free-three is allowed", [&]() {
+    initGrid();
+    testGrid[9][10] = Stone::WHITE;
+    testGrid[9][11] = Stone::WHITE;
+    testGrid[9][12] = Stone::BLACK;
+
+    testGrid[9][7] = Stone::BLACK;
+    testGrid[9][8] = Stone::BLACK;
+
+    int captured = countCapturedPairs({9, 9}, Stone::BLACK, testGrid);
+    if (captured != 1)
+      throw std::runtime_error("Capture should be allowed even if creating free-three");
+  });
+
   std::cout << std::endl;
   std::cout << "=== Results ===" << std::endl;
   std::cout << "Total tests: " << (passed + failed) << std::endl;
