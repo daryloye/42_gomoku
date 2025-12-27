@@ -74,16 +74,34 @@ int countCapturedPairs(Coord move, Stone colour, const Grid &grid) {
     int dx = dir[0];
     int dy = dir[1];
 
-    if (grid[move.y + dy][move.x + dx] == opponent &&
-        grid[move.y + 2 * dy][move.x + 2 * dx] == opponent &&
-        grid[move.y + 3 * dy][move.x + 3 * dx] == colour) {
-      capturedCount++;
+    // Check forward direction
+    int py1 = move.y + dy, px1 = move.x + dx;
+    int py2 = move.y + 2 * dy, px2 = move.x + 2 * dx;
+    int py3 = move.y + 3 * dy, px3 = move.x + 3 * dx;
+
+    if (py1 >= 0 && py1 < BOARD_SIZE && px1 >= 0 && px1 < BOARD_SIZE &&
+        py2 >= 0 && py2 < BOARD_SIZE && px2 >= 0 && px2 < BOARD_SIZE &&
+        py3 >= 0 && py3 < BOARD_SIZE && px3 >= 0 && px3 < BOARD_SIZE) {
+      if (grid[py1][px1] == opponent &&
+          grid[py2][px2] == opponent &&
+          grid[py3][px3] == colour) {
+        capturedCount++;
+      }
     }
 
-    if (grid[move.y - dy][move.x - dx] == opponent &&
-        grid[move.y - 2 * dy][move.x - 2 * dx] == opponent &&
-        grid[move.y - 3 * dy][move.x - 3 * dx] == colour) {
-      capturedCount++;
+    // Check backward direction
+    int ny1 = move.y - dy, nx1 = move.x - dx;
+    int ny2 = move.y - 2 * dy, nx2 = move.x - 2 * dx;
+    int ny3 = move.y - 3 * dy, nx3 = move.x - 3 * dx;
+
+    if (ny1 >= 0 && ny1 < BOARD_SIZE && nx1 >= 0 && nx1 < BOARD_SIZE &&
+        ny2 >= 0 && ny2 < BOARD_SIZE && nx2 >= 0 && nx2 < BOARD_SIZE &&
+        ny3 >= 0 && ny3 < BOARD_SIZE && nx3 >= 0 && nx3 < BOARD_SIZE) {
+      if (grid[ny1][nx1] == opponent &&
+          grid[ny2][nx2] == opponent &&
+          grid[ny3][nx3] == colour) {
+        capturedCount++;
+      }
     }
   }
 

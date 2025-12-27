@@ -135,17 +135,6 @@ int GomokuBoard::handle(int event) {
   if (event == FL_PUSH && Fl::event_button() == FL_LEFT_MOUSE) {
     if (clickedModeButton(Fl::event_x(), Fl::event_y())) {
       reset();
-      if (gameMode == GameMode::AI_VS_AI) {
-        isAiThinking = true;
-        aiThinkStartTime = std::chrono::steady_clock::now();
-        Fl::add_timeout(
-            0.01, // Minimal timeout to allow UI to update
-            [](void *v) {
-              GomokuBoard *board = (GomokuBoard *)v;
-              board->makeAIMove();
-            },
-            this);
-      }
       redraw();
       return 1;
     }
@@ -164,20 +153,6 @@ int GomokuBoard::handle(int event) {
       aiColor = Stone::WHITE;
       redraw();
       return 1;
-    } else if (key == '3') {
-      gameMode = GameMode::AI_VS_AI;
-      reset();
-      isAiThinking = true;
-      aiThinkStartTime = std::chrono::steady_clock::now();
-      Fl::add_timeout(
-          0.01, // Minimal timeout to allow UI to update
-          [](void *v) {
-            GomokuBoard *board = (GomokuBoard *)v;
-            board->makeAIMove();
-          },
-          this);
-      redraw();
-      return 1;
     }
   }
 
@@ -185,11 +160,6 @@ int GomokuBoard::handle(int event) {
   if (event == FL_MOVE) {
     // Don't show outline if game is over
     if (winner != Stone::EMPTY) {
-      return 1;
-    }
-
-    // Don't show outline in AI vs AI mode
-    if (gameMode == GameMode::AI_VS_AI) {
       return 1;
     }
 
@@ -206,10 +176,6 @@ int GomokuBoard::handle(int event) {
 
   // Left click to place stone
   if (event == FL_PUSH && Fl::event_button() == FL_LEFT_MOUSE) {
-    // In AI vs AI mode, don't allow human to place stones
-    if (gameMode == GameMode::AI_VS_AI)
-      return 1;
-
     // In AI vs Human mode, only allow human to click during their turn
     if (gameMode == GameMode::AI_VS_HUMAN && currentPlayer == aiColor)
       return 1;
@@ -350,18 +316,6 @@ int GomokuBoard::handle(int event) {
             this);
       }
 
-      if (gameMode == GameMode::AI_VS_AI) {
-        isAiThinking = true;
-        aiThinkStartTime = std::chrono::steady_clock::now();
-        Fl::add_timeout(
-            0.01,
-            [](void *v) {
-              GomokuBoard *board = (GomokuBoard *)v;
-              board->makeAIMove();
-            },
-            this);
-      }
-
       // Auto-update suggestion for next turn if suggestion is enabled
       if (showSuggestion) {
         updateSuggestion();
@@ -393,7 +347,7 @@ int GomokuBoard::handle(int event) {
     }
 
     if (key == 'h' || key == 'H') {
-      if (gameMode == GameMode::AI_VS_HUMAN || gameMode == GameMode::AI_VS_AI) {
+      if (gameMode == GameMode::AI_VS_HUMAN) {
         showHeatmap = !showHeatmap;
         if (showHeatmap) {
           heatmapNeedsRedraw = true;
@@ -408,24 +362,26 @@ int GomokuBoard::handle(int event) {
 }
 
 void GomokuBoard::makeAIMove() {
-  if (gameMode == GameMode::AI_VS_HUMAN && currentPlayer != aiColor) {
-    isAiThinking = false;
-    return;
-  }
+  try {
+    if (gameMode == GameMode::AI_VS_HUMAN && currentPlayer != aiColor) {
+      isAiThinking = false;
+      return;
+    }
 
-  if (gameMode == GameMode::TWO_PLAYER) {
-    isAiThinking = false;
-    return;
-  }
+    if (gameMode == GameMode::TWO_PLAYER) {
+      isAiThinking = false;
+      return;
+    }
 
-  Stone opponentColor =
-      (currentPlayer == Stone::BLACK) ? Stone::WHITE : Stone::BLACK;
+    Stone aiPlayer = currentPlayer;
+    Stone opponentColor =
+        (currentPlayer == Stone::BLACK) ? Stone::WHITE : Stone::BLACK;
 
-  Minimax m(currentPlayer, opponentColor);
-  Coord lastMove = {-1, -1};
+    Minimax m(currentPlayer, opponentColor);
+    Coord lastMove = {-1, -1};
 
-  MinimaxResult aiResult =
-      m.minimax(grid, lastMove, 10, currentPlayer, opponentColor);
+    MinimaxResult aiResult =
+        m.minimax(grid, lastMove, 10, currentPlayer, opponentColor);
 
   lastEvaluationHeatmap = m.getEvaluationHeatmap();
   heatmapNeedsRedraw = true;
@@ -523,25 +479,42 @@ void GomokuBoard::makeAIMove() {
       now - aiThinkStartTime);
   aiThinkTime = thinkDuration.count();
 
-  Stone timeTrackingPlayer =
-      (gameMode == GameMode::AI_VS_AI) ? currentPlayer : aiColor;
-  timer.calculateTimeSpentOnMove(timeTrackingPlayer);
+  timer.calculateTimeSpentOnMove(aiColor);
 
   timer.resetTimer();
 
+  // Print AI move statistics
+  int totalNodesEvaluated = 0;
+  for (int y = 0; y < BOARD_SIZE; y++) {
+    for (int x = 0; x < BOARD_SIZE; x++) {
+      totalNodesEvaluated += lastEvaluationHeatmap[y][x];
+    }
+  }
+
+  std::cout << "AI (" << (aiPlayer == Stone::BLACK ? "BLACK" : "WHITE")
+            << "): " << aiResult.move << " | Score: " << aiResult.score
+            << " | Time: " << aiThinkTime << "ms | Nodes: " << totalNodesEvaluated << std::endl;
+  std::cout << "Captures: " << capturedPairs << " | Total - B:" << blackCaptured
+            << " W:" << whiteCaptured << " | Moves - B:" << blackMoveCount
+            << " W:" << whiteMoveCount << std::endl;
+
   isAiThinking = false;
   redraw();
-
-  if (gameMode == GameMode::AI_VS_AI && winner == Stone::EMPTY) {
-    isAiThinking = true;
-    aiThinkStartTime = std::chrono::steady_clock::now();
-    Fl::add_timeout(
-        0.01,
-        [](void *v) {
-          GomokuBoard *board = (GomokuBoard *)v;
-          board->makeAIMove();
-        },
-        this);
+  }
+  catch (const std::bad_alloc& e) {
+    std::cerr << "AI Error: Out of memory - " << e.what() << std::endl;
+    isAiThinking = false;
+    redraw();
+  }
+  catch (const std::exception& e) {
+    std::cerr << "AI Error: Exception occurred - " << e.what() << std::endl;
+    isAiThinking = false;
+    redraw();
+  }
+  catch (...) {
+    std::cerr << "AI Error: Unknown exception occurred" << std::endl;
+    isAiThinking = false;
+    redraw();
   }
 }
 
@@ -570,27 +543,63 @@ bool GomokuBoard::clickedModeButton(int x, int y) {
     return false;
   }
 
+  // Reset button
   if (x >= buttonX && x <= buttonX + buttonW &&
       y >= buttonY + 2 * (buttonH + 5) && y <= buttonY + 3 * buttonH + 10) {
-    if (gameMode != GameMode::AI_VS_AI) {
-      gameMode = GameMode::AI_VS_AI;
-      return true;
-    }
+    reset();
+    redraw();
     return false;
+  }
+
+  // Hint button (Two Player mode) or Heatmap button (AI vs Human mode)
+  if (x >= buttonX && x <= buttonX + buttonW &&
+      y >= buttonY + 3 * (buttonH + 5) && y <= buttonY + 4 * buttonH + 15) {
+    if (gameMode == GameMode::TWO_PLAYER && winner == Stone::EMPTY) {
+      // Toggle suggestion
+      showSuggestion = !showSuggestion;
+      if (showSuggestion) {
+        updateSuggestion();
+      }
+      redraw();
+      return false;
+    }
+    if (gameMode == GameMode::AI_VS_HUMAN) {
+      // Toggle heatmap
+      showHeatmap = !showHeatmap;
+      if (showHeatmap) {
+        heatmapNeedsRedraw = true;
+      }
+      redraw();
+      return false;
+    }
   }
 
   return false;
 }
 
 void GomokuBoard::updateSuggestion() {
-  if (gameMode != GameMode::TWO_PLAYER || winner != Stone::EMPTY) {
-    return;
-  }
+  try {
+    if (gameMode != GameMode::TWO_PLAYER || winner != Stone::EMPTY) {
+      return;
+    }
 
-  Stone opponent =
-      (currentPlayer == Stone::BLACK) ? Stone::WHITE : Stone::BLACK;
-  Minimax m(currentPlayer, opponent);
-  Coord lastMove = {-1, -1};
-  suggestedMove = m.minimax(grid, lastMove, 10, currentPlayer, opponent);
-  suggestionForPlayer = currentPlayer;
+    Stone opponent =
+        (currentPlayer == Stone::BLACK) ? Stone::WHITE : Stone::BLACK;
+    Minimax m(currentPlayer, opponent);
+    Coord lastMove = {-1, -1};
+    suggestedMove = m.minimax(grid, lastMove, 10, currentPlayer, opponent);
+    suggestionForPlayer = currentPlayer;
+  }
+  catch (const std::bad_alloc& e) {
+    std::cerr << "Suggestion Error: Out of memory - " << e.what() << std::endl;
+    showSuggestion = false;
+  }
+  catch (const std::exception& e) {
+    std::cerr << "Suggestion Error: Exception occurred - " << e.what() << std::endl;
+    showSuggestion = false;
+  }
+  catch (...) {
+    std::cerr << "Suggestion Error: Unknown exception occurred" << std::endl;
+    showSuggestion = false;
+  }
 }

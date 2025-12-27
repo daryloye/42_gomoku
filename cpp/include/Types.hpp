@@ -16,7 +16,6 @@ enum class Stone {
 enum class GameMode {
   TWO_PLAYER = 0,
   AI_VS_HUMAN = 1,
-  AI_VS_AI = 2,
 };
 
 struct Coord {
@@ -25,7 +24,7 @@ struct Coord {
 };
 
 struct MinimaxResult {
-  int score;
+  float score;
   Coord move;
 };
 

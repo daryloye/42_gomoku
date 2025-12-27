@@ -21,7 +21,6 @@ void GomokuBoard::drawBoard() {
   int boardEndX = OFFSET + (BOARD_SIZE - 1) * CELL_SIZE;
   int boardEndY = boardYOffset + OFFSET + (BOARD_SIZE - 1) * CELL_SIZE;
 
-  // Draw grid lines
   for (int i = 0; i < BOARD_SIZE; i++) {
     int xpos = boardStartX + i * CELL_SIZE;
     int ypos = boardStartY + i * CELL_SIZE;
@@ -31,7 +30,6 @@ void GomokuBoard::drawBoard() {
 
   int r = CELL_SIZE / 2 - 2;
 
-  // Draw black stones first
   fl_color(0, 0, 0);
   for (int cellY = 0; cellY < BOARD_SIZE; cellY++) {
     for (int cellX = 0; cellX < BOARD_SIZE; cellX++) {
@@ -44,7 +42,6 @@ void GomokuBoard::drawBoard() {
     }
   }
 
-  // Draw white stones
   fl_color(255, 255, 255);
   for (int cellY = 0; cellY < BOARD_SIZE; cellY++) {
     for (int cellX = 0; cellX < BOARD_SIZE; cellX++) {
@@ -210,15 +207,36 @@ void GomokuBoard::drawModeButtons() {
   fl_rect(buttonX, buttonY + buttonH + 5, buttonW, buttonH);
   BitmapFont::drawText("AI", buttonX + 15, buttonY + buttonH + 15, 1);
 
-  // AI vs AI button
-  if (gameMode == GameMode::AI_VS_AI)
-    fl_color(255, 200, 150);
-  else
-    fl_color(200, 150, 100);
+  // Reset button
+  fl_color(220, 100, 100);
   fl_rectf(buttonX, buttonY + 2 * (buttonH + 5), buttonW, buttonH);
   fl_color(0, 0, 0);
   fl_rect(buttonX, buttonY + 2 * (buttonH + 5), buttonW, buttonH);
-  BitmapFont::drawText("AI-AI", buttonX + 5, buttonY + 2 * (buttonH + 5) + 10, 1);
+  BitmapFont::drawText("RESET", buttonX + 8, buttonY + 2 * (buttonH + 5) + 10, 1);
+
+  // Suggestion toggle button (only in Two Player mode)
+  if (gameMode == GameMode::TWO_PLAYER && winner == Stone::EMPTY) {
+    if (showSuggestion)
+      fl_color(150, 255, 150);
+    else
+      fl_color(100, 200, 100);
+    fl_rectf(buttonX, buttonY + 3 * (buttonH + 5), buttonW, buttonH);
+    fl_color(0, 0, 0);
+    fl_rect(buttonX, buttonY + 3 * (buttonH + 5), buttonW, buttonH);
+    BitmapFont::drawText("HINT", buttonX + 10, buttonY + 3 * (buttonH + 5) + 10, 1);
+  }
+
+  // Heatmap toggle button (only in AI vs Human mode)
+  if (gameMode == GameMode::AI_VS_HUMAN) {
+    if (showHeatmap)
+      fl_color(255, 200, 150);
+    else
+      fl_color(200, 150, 100);
+    fl_rectf(buttonX, buttonY + 3 * (buttonH + 5), buttonW, buttonH);
+    fl_color(0, 0, 0);
+    fl_rect(buttonX, buttonY + 3 * (buttonH + 5), buttonW, buttonH);
+    BitmapFont::drawText("HEAT", buttonX + 10, buttonY + 3 * (buttonH + 5) + 10, 1);
+  }
 }
 
 void GomokuBoard::drawUI() {
@@ -234,7 +252,6 @@ void GomokuBoard::drawUI() {
   switch(gameMode) {
     case GameMode::TWO_PLAYER: modeText = "Mode: 2-Player"; break;
     case GameMode::AI_VS_HUMAN: modeText = "Mode: AI vs Human"; break;
-    case GameMode::AI_VS_AI: modeText = "Mode: AI vs AI"; break;
   }
   BitmapFont::drawText(modeText, OFFSET + 450, 35, 2);
 
@@ -256,9 +273,8 @@ void GomokuBoard::drawUI() {
 
   const char *helpText = nullptr;
   switch (gameMode) {
-    case GameMode::TWO_PLAYER: helpText = "Press 'R' to reset | Press 'S' for suggestion"; break;
-    case GameMode::AI_VS_HUMAN: helpText = "Press 'R' to reset | Press 'H' for heatmap"; break;
-    case GameMode::AI_VS_AI: helpText = "Press 'R' to reset | Press 'H' for heatmap"; break;
+    case GameMode::TWO_PLAYER: helpText = "Use buttons on the right to control the game"; break;
+    case GameMode::AI_VS_HUMAN: helpText = "Use buttons on the right to control the game"; break;
   }
   BitmapFont::drawText(helpText, OFFSET, h() - 25, 1);
 }

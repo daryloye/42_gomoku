@@ -4,8 +4,7 @@ BUILD_DIR	=	build
 CXX				=	c++
 CXXFLAGS	=	-Wall -Wextra -Werror -std=c++17 -O3 -march=native -mtune=native \
 						-flto -funroll-loops -finline-functions -ffast-math \
-						-static-libstdc++ -fno-pie \
-						-MMD -MP
+						-static-libstdc++ -fno-pie
 CPPFLAGS	=	-I./include $(shell fltk-config --cxxflags)
 LDFLAGS		=	-O3 -flto -no-pie -Wl,-z,now -Wl,--no-as-needed -static-libstdc++ -ldl $(shell fltk-config --ldflags)
 
@@ -14,7 +13,7 @@ SRCS			=	src/main.cpp \
 						src/BoardDraw.cpp \
 						src/Timer.cpp \
 						src/WinRules.cpp \
-						src/Minimax2.cpp \
+						src/Minimax.cpp \
 						src/Utils.cpp \
 						src/BitmapFont.cpp
 
@@ -35,7 +34,7 @@ clean:
 			rm -rf $(BUILD_DIR)
 
 fclean: clean
-			rm -f $(NAME)
+			rm -f $(NAME) test
 
 re: fclean all
 
@@ -49,4 +48,10 @@ valgrind:	valgrind-build
 			valgrind --leak-check=full --show-leak-kinds=all \
 			--track-origins=yes --suppressions=valgrind.supp ./$(NAME)
 
-.PHONY: all clean fclean re valgrind valgrind-build
+test: src/test.cpp
+			$(CXX) -Wall -Wextra -Werror -std=c++17 -O2 -I./include \
+			src/test.cpp src/WinRules.cpp src/Minimax.cpp src/Utils.cpp \
+			-o test
+			valgrind ./test
+
+.PHONY: all clean fclean re valgrind valgrind-build test

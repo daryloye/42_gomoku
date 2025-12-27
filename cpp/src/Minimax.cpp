@@ -51,6 +51,10 @@ MinimaxResult Minimax::minimax(const Grid &grid, Coord lastMove, int depth,
 
   if (depth == 0 || moves.empty()) {
     float score = evaluateMove(grid);
+    // If no moves available (empty board), return center position
+    if (moves.empty()) {
+      return {score, {BOARD_SIZE / 2, BOARD_SIZE / 2}};
+    }
     return {score, lastMove};
   }
 

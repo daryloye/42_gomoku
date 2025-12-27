@@ -8,7 +8,7 @@ public:
 
   MinimaxResult minimax(const Grid &grid, Coord lastMove, int depth,
                         Stone currentColour, Stone prevColour,
-                        int alpha = -1000000000, int beta = 1000000000);
+                        float alpha = -1.0e+10f, float beta = 1.0e+10f);
 
   const CountGrid &getEvaluationHeatmap() const { return _evaluationCount; }
   void resetHeatmap() {
@@ -25,7 +25,7 @@ private:
 
   bool hasOccupiedNeighbour(Coord cell, const Grid &grid);
   std::vector<Coord> getPossibleMoves(const Grid &grid);
-  int evaluateMove(const Grid &grid);
+  float evaluateMove(const Grid &grid);
   int countConsecutive(Coord pos, int dy, int dx, Stone colour, const Grid &grid);
   void evaluateDirection(Coord pos, int dy, int dx, Stone colour, const Grid &grid, int &score);
 };
