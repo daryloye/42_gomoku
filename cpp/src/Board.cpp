@@ -1,16 +1,19 @@
 #include "Gomoku.hpp"
 
-GomokuBoard::GomokuBoard() : Fl_Window(WIN_WIDTH, WIN_HEIGHT, "Gomoku") {
+GomokuBoard::GomokuBoard(void) : Fl_Window(WIN_WIDTH, WIN_HEIGHT, "Gomoku")
+{
   reset();
   resizable(nullptr);
   end();
 }
 
-GomokuBoard::~GomokuBoard() {}
+GomokuBoard::~GomokuBoard(void) {}
 
-void GomokuBoard::reset() {
+void GomokuBoard::reset(void)
+{
   for (int y = 0; y < BOARD_SIZE; y++)
-    for (int x = 0; x < BOARD_SIZE; x++) {
+    for (int x = 0; x < BOARD_SIZE; x++)
+    {
       grid[y][x] = Stone::EMPTY;
       lastEvaluationHeatmap[y][x] = 0;
     }
@@ -35,14 +38,16 @@ void GomokuBoard::reset() {
   timer.resetAll();
 }
 
-Stone GomokuBoard::getStone(Coord cell) const {
+Stone GomokuBoard::getStone(Coord cell) const
+{
   if (cell.x < 0 || cell.x >= BOARD_SIZE || cell.y < 0 || cell.y >= BOARD_SIZE)
     return (Stone::EMPTY);
 
   return (grid[cell.y][cell.x]);
 }
 
-void GomokuBoard::setStone(Coord cell, Stone stone) {
+void GomokuBoard::setStone(Coord cell, Stone stone)
+{
   if (cell.x >= 0 && cell.x < BOARD_SIZE && cell.y >= 0 && cell.y < BOARD_SIZE)
     grid[cell.y][cell.x] = stone;
 }

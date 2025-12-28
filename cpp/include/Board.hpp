@@ -2,7 +2,8 @@
 #define BOARD_HPP
 
 // https://www.fltk.org/doc-1.4/classFl__Window.html
-class GomokuBoard : public Fl_Window {
+class GomokuBoard : public Fl_Window
+{
 public:
   GomokuBoard();
   ~GomokuBoard();

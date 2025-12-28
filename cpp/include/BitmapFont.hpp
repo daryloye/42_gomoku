@@ -6,7 +6,8 @@
 
 #include "IBM_VGA_8x16.h"
 
-class BitmapFont {
+class BitmapFont
+{
 public:
 	static constexpr int CHAR_WIDTH = 8;
 	static constexpr int CHAR_HEIGHT = 16;
