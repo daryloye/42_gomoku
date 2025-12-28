@@ -17,6 +17,17 @@ SRCS			=	src/main.cpp \
 						src/Utils.cpp \
 						src/BitmapFont.cpp
 
+HEADERS		=	include/Board.hpp \
+						include/BitmapFont.hpp \
+						include/Config.hpp \
+						include/Gomoku.hpp \
+						include/IBM_VGA_8x16.h \
+						include/Minimax.hpp \
+						include/Timer.hpp \
+						include/Types.hpp \
+						include/Utils.hpp \
+						include/WinRules.hpp
+
 OBJS			=	$(addprefix $(BUILD_DIR)/,$(SRCS:.cpp=.o))
 
 all: $(NAME)
@@ -24,7 +35,7 @@ all: $(NAME)
 $(NAME): $(OBJS)
 			$(CXX) $(CXXFLAGS) $(OBJS) -o $(NAME) $(LDFLAGS)
 
-$(BUILD_DIR)/%.o:	%.cpp
+$(BUILD_DIR)/%.o:	%.cpp $(HEADERS)
 			mkdir -p $(dir $@)
 			$(CXX) $(CXXFLAGS) $(CPPFLAGS) -c $< -o $@
 
