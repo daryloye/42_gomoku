@@ -54,7 +54,6 @@ void GomokuBoard::drawBoard() {
     }
   }
 
-  // Draw outline stones
   if (currentPlayer == Stone::BLACK)
     fl_color(0, 0, 0);
   else
@@ -75,11 +74,10 @@ void GomokuBoard::drawBoard() {
     int sx = boardStartX + suggestedMove.move.x * CELL_SIZE;
     int sy = boardStartY + suggestedMove.move.y * CELL_SIZE;
 
-    // Use different colors for black and white suggestions
     if (suggestionForPlayer == Stone::BLACK) {
-      fl_color(80, 80, 80); // Dark gray for black
+      fl_color(80, 80, 80);
     } else {
-      fl_color(220, 220, 220); // Light gray for white
+      fl_color(220, 220, 220);
     }
 
     fl_line_style(FL_SOLID, 3);
@@ -187,7 +185,6 @@ void GomokuBoard::drawModeButtons() {
   fl_color(0, 0, 0);
   BitmapFont::drawText("Mode:", buttonX, buttonY - 25, 2);
 
-  // 2-Player button
   if (gameMode == GameMode::TWO_PLAYER)
     fl_color(150, 255, 150);
   else
@@ -197,7 +194,6 @@ void GomokuBoard::drawModeButtons() {
   fl_rect(buttonX, buttonY, buttonW, buttonH);
   BitmapFont::drawText("2-PLY", buttonX + 5, buttonY + 10, 1);
 
-  // AI vs Human button
   if (gameMode == GameMode::AI_VS_HUMAN)
     fl_color(150, 200, 255);
   else
@@ -207,14 +203,12 @@ void GomokuBoard::drawModeButtons() {
   fl_rect(buttonX, buttonY + buttonH + 5, buttonW, buttonH);
   BitmapFont::drawText("AI", buttonX + 15, buttonY + buttonH + 15, 1);
 
-  // Reset button
   fl_color(220, 100, 100);
   fl_rectf(buttonX, buttonY + 2 * (buttonH + 5), buttonW, buttonH);
   fl_color(0, 0, 0);
   fl_rect(buttonX, buttonY + 2 * (buttonH + 5), buttonW, buttonH);
   BitmapFont::drawText("RESET", buttonX + 8, buttonY + 2 * (buttonH + 5) + 10, 1);
 
-  // Suggestion toggle button (only in Two Player mode)
   if (gameMode == GameMode::TWO_PLAYER && winner == Stone::EMPTY) {
     if (showSuggestion)
       fl_color(150, 255, 150);
@@ -226,7 +220,6 @@ void GomokuBoard::drawModeButtons() {
     BitmapFont::drawText("HINT", buttonX + 10, buttonY + 3 * (buttonH + 5) + 10, 1);
   }
 
-  // Heatmap toggle button (only in AI vs Human mode)
   if (gameMode == GameMode::AI_VS_HUMAN) {
     if (showHeatmap)
       fl_color(255, 200, 150);
@@ -236,6 +229,60 @@ void GomokuBoard::drawModeButtons() {
     fl_color(0, 0, 0);
     fl_rect(buttonX, buttonY + 3 * (buttonH + 5), buttonW, buttonH);
     BitmapFont::drawText("HEAT", buttonX + 10, buttonY + 3 * (buttonH + 5) + 10, 1);
+  }
+
+  int configY = buttonY + 4 * (buttonH + 5) + 20;
+
+  fl_color(0, 0, 0);
+  BitmapFont::drawText("Rules:", buttonX, configY, 2);
+  configY += 25;
+
+  const char* openingNames[] = {"STD", "PRO", "SW1", "SW2"};
+  fl_color(200, 180, 255);
+  fl_rectf(buttonX, configY, buttonW, 25);
+  fl_color(0, 0, 0);
+  fl_rect(buttonX, configY, buttonW, 25);
+  BitmapFont::drawText(openingNames[(int)gameRules.openingRule], buttonX + 5, configY + 7, 1);
+  configY += 35;
+
+  int checkBoxSize = 15;
+  fl_color(255, 255, 255);
+  fl_rectf(buttonX, configY, checkBoxSize, checkBoxSize);
+  fl_color(0, 0, 0);
+  fl_rect(buttonX, configY, checkBoxSize, checkBoxSize);
+  if (gameRules.capturesEnabled) {
+    fl_line(buttonX + 2, configY + 7, buttonX + 6, configY + 11);
+    fl_line(buttonX + 6, configY + 11, buttonX + 13, configY + 2);
+  }
+  BitmapFont::drawText("Capture", buttonX + 20, configY + 3, 1);
+  configY += 25;
+
+  fl_color(255, 255, 255);
+  fl_rectf(buttonX, configY, checkBoxSize, checkBoxSize);
+  fl_color(0, 0, 0);
+  fl_rect(buttonX, configY, checkBoxSize, checkBoxSize);
+  if (gameRules.doubleThreeEnabled) {
+    fl_line(buttonX + 2, configY + 7, buttonX + 6, configY + 11);
+    fl_line(buttonX + 6, configY + 11, buttonX + 13, configY + 2);
+  }
+  BitmapFont::drawText("No-DT", buttonX + 20, configY + 3, 1);
+  configY += 25;
+
+  if (gameRules.openingRule == OpeningRule::SWAP && gameRules.swapOffered) {
+    fl_color(255, 200, 100);
+    fl_rectf(buttonX - 5, configY, buttonW + 10, 40);
+    fl_color(0, 0, 0);
+    fl_rect(buttonX - 5, configY, buttonW + 10, 40);
+    BitmapFont::drawText("Swap?", buttonX + 10, configY + 5, 1);
+    BitmapFont::drawText("Y   N", buttonX + 15, configY + 20, 1);
+  } else if (gameRules.openingRule == OpeningRule::SWAP2 && gameRules.swap2FirstPhase) {
+    fl_color(255, 200, 100);
+    fl_rectf(buttonX - 5, configY, buttonW + 10, 25);
+    fl_color(0, 0, 0);
+    fl_rect(buttonX - 5, configY, buttonW + 10, 25);
+    char msg[32];
+    snprintf(msg, sizeof(msg), "SW2:%d/3", gameRules.swap2StonesPlaced);
+    BitmapFont::drawText(msg, buttonX + 10, configY + 7, 1);
   }
 }
 

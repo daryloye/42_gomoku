@@ -30,6 +30,8 @@ private:
   std::chrono::steady_clock::time_point aiThinkStartTime;
   float aiThinkTime = 0.0f;
 
+  GameRules gameRules;
+
   int blackCaptured = 0;
   int whiteCaptured = 0;
 
@@ -54,6 +56,8 @@ private:
   void drawModeButtons();
   void makeAIMove();
   bool clickedModeButton(int x, int y);
+  void handleSwapDecision(bool acceptSwap);
+  void handleSwap2Decision(int choice);
   void analyzeDoubleThree(Coord move, Stone colour,
                           std::array<bool, 4> &directions);
   void updateSuggestion();

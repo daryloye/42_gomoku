@@ -36,6 +36,14 @@ void GomokuBoard::reset(void)
   showHeatmap = false;
   heatmapNeedsRedraw = false;
   timer.resetAll();
+
+  gameRules.swapOffered = false;
+  gameRules.swap2FirstPhase = false;
+  gameRules.swap2StonesPlaced = 0;
+
+  if (gameRules.openingRule == OpeningRule::SWAP2) {
+    gameRules.swap2FirstPhase = true;
+  }
 }
 
 Stone GomokuBoard::getStone(Coord cell) const
@@ -179,9 +187,7 @@ int GomokuBoard::handle(int event) {
     redraw();
   }
 
-  // Left click to place stone
   if (event == FL_PUSH && Fl::event_button() == FL_LEFT_MOUSE) {
-    // In AI vs Human mode, only allow human to click during their turn
     if (gameMode == GameMode::AI_VS_HUMAN && currentPlayer == aiColor)
       return 1;
 
@@ -199,7 +205,7 @@ int GomokuBoard::handle(int event) {
       return 1;
     }
 
-    if (createsDoubleThree(cell, currentPlayer, grid)) {
+    if (gameRules.doubleThreeEnabled && createsDoubleThree(cell, currentPlayer, grid)) {
       illegalMoveCell = cell;
       hasIllegalMove = true;
       illegalDirections = {false, false, false, false};
@@ -221,18 +227,33 @@ int GomokuBoard::handle(int event) {
     else
       whiteMoveCount++;
 
-    setStone(cell, currentPlayer);
-
-    // Handle captures
-    int capturedPairs = countCapturedPairs(cell, currentPlayer, grid);
-    if (currentPlayer == Stone::BLACK) {
-      blackCaptured += capturedPairs;
-    } else {
-      whiteCaptured += capturedPairs;
+    if (gameRules.openingRule == OpeningRule::SWAP2 && gameRules.swap2FirstPhase) {
+      gameRules.swap2StonesPlaced++;
+      if (gameRules.swap2StonesPlaced <= 2) {
+        setStone(cell, Stone::BLACK);
+      } else if (gameRules.swap2StonesPlaced == 3) {
+        setStone(cell, Stone::WHITE);
+        gameRules.swap2FirstPhase = false;
+        currentPlayer = Stone::WHITE;
+        // TODO: Show swap2 decision UI
+      }
+      redraw();
+      return 1;
     }
 
-    // Remove captured stones
-    if (capturedPairs > 0) {
+    setStone(cell, currentPlayer);
+
+    int capturedPairs = 0;
+    if (gameRules.capturesEnabled) {
+      capturedPairs = countCapturedPairs(cell, currentPlayer, grid);
+      if (currentPlayer == Stone::BLACK) {
+        blackCaptured += capturedPairs;
+      } else {
+        whiteCaptured += capturedPairs;
+      }
+    }
+
+    if (gameRules.capturesEnabled && capturedPairs > 0) {
       Stone opponent =
           (currentPlayer == Stone::BLACK) ? Stone::WHITE : Stone::BLACK;
       const int directions[4][2] = {{1, 0}, {0, 1}, {1, 1}, {1, -1}};
@@ -308,6 +329,15 @@ int GomokuBoard::handle(int event) {
     } else {
       currentPlayer =
           (currentPlayer == Stone::BLACK) ? Stone::WHITE : Stone::BLACK;
+
+      // Handle SWAP opening rule: after first move, offer WHITE the option to swap
+      if (gameRules.openingRule == OpeningRule::SWAP && blackMoveCount == 1 &&
+          whiteMoveCount == 0 && currentPlayer == Stone::WHITE) {
+        gameRules.swapOffered = true;
+        timer.resetTimer();
+        redraw();
+        return 1;  // Wait for swap decision
+      }
 
       if (gameMode == GameMode::AI_VS_HUMAN && currentPlayer == aiColor) {
         isAiThinking = true;
@@ -556,11 +586,9 @@ bool GomokuBoard::clickedModeButton(int x, int y) {
     return false;
   }
 
-  // Hint button (Two Player mode) or Heatmap button (AI vs Human mode)
   if (x >= buttonX && x <= buttonX + buttonW &&
       y >= buttonY + 3 * (buttonH + 5) && y <= buttonY + 4 * buttonH + 15) {
     if (gameMode == GameMode::TWO_PLAYER && winner == Stone::EMPTY) {
-      // Toggle suggestion
       showSuggestion = !showSuggestion;
       if (showSuggestion) {
         updateSuggestion();
@@ -569,12 +597,51 @@ bool GomokuBoard::clickedModeButton(int x, int y) {
       return false;
     }
     if (gameMode == GameMode::AI_VS_HUMAN) {
-      // Toggle heatmap
       showHeatmap = !showHeatmap;
       if (showHeatmap) {
         heatmapNeedsRedraw = true;
       }
       redraw();
+      return false;
+    }
+  }
+
+  int configY = buttonY + 4 * (buttonH + 5) + 20;
+  configY += 25;  // Skip "Rules:" label
+
+  if (x >= buttonX && x <= buttonX + buttonW && y >= configY && y <= configY + 25) {
+    int current = (int)gameRules.openingRule;
+    gameRules.openingRule = (OpeningRule)((current + 1) % 4);
+    reset();
+    redraw();
+    return false;
+  }
+  configY += 35;
+
+  int checkBoxSize = 15;
+  if (x >= buttonX && x <= buttonX + checkBoxSize && y >= configY && y <= configY + checkBoxSize) {
+    gameRules.capturesEnabled = !gameRules.capturesEnabled;
+    reset();
+    redraw();
+    return false;
+  }
+  configY += 25;
+
+  if (x >= buttonX && x <= buttonX + checkBoxSize && y >= configY && y <= configY + checkBoxSize) {
+    gameRules.doubleThreeEnabled = !gameRules.doubleThreeEnabled;
+    reset();
+    redraw();
+    return false;
+  }
+  configY += 25;
+
+  if (gameRules.openingRule == OpeningRule::SWAP && gameRules.swapOffered) {
+    if (x >= buttonX + 10 && x <= buttonX + 30 && y >= configY + 15 && y <= configY + 30) {
+      handleSwapDecision(true);
+      return false;
+    }
+    if (x >= buttonX + 40 && x <= buttonX + 60 && y >= configY + 15 && y <= configY + 30) {
+      handleSwapDecision(false);
       return false;
     }
   }
@@ -607,4 +674,35 @@ void GomokuBoard::updateSuggestion() {
     std::cerr << "Suggestion Error: Unknown exception occurred" << std::endl;
     showSuggestion = false;
   }
+}
+
+void GomokuBoard::handleSwapDecision(bool acceptSwap) {
+  if (acceptSwap) {
+    if (gameMode == GameMode::AI_VS_HUMAN) {
+      aiColor = (aiColor == Stone::BLACK) ? Stone::WHITE : Stone::BLACK;
+    }
+  }
+  currentPlayer = acceptSwap ? Stone::BLACK : Stone::WHITE;
+  gameRules.swapOffered = false;
+  redraw();
+}
+
+void GomokuBoard::handleSwap2Decision(int choice) {
+  if (choice == 0) {
+    if (gameMode == GameMode::AI_VS_HUMAN) {
+      aiColor = Stone::WHITE;
+    }
+    currentPlayer = Stone::BLACK;
+    gameRules.swap2FirstPhase = false;
+  } else if (choice == 1) {
+    if (gameMode == GameMode::AI_VS_HUMAN) {
+      aiColor = Stone::BLACK;
+    }
+    currentPlayer = Stone::WHITE;
+    gameRules.swap2FirstPhase = false;
+  } else if (choice == 2) {
+    gameRules.swap2FirstPhase = true;
+    currentPlayer = Stone::BLACK;
+  }
+  redraw();
 }

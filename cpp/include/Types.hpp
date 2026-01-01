@@ -18,6 +18,23 @@ enum class GameMode {
   AI_VS_HUMAN = 1,
 };
 
+enum class OpeningRule {
+  STANDARD = 0,
+  PRO = 1,
+  SWAP = 2,
+  SWAP2 = 3
+};
+
+struct GameRules {
+  bool capturesEnabled = true;
+  bool doubleThreeEnabled = true;
+  OpeningRule openingRule = OpeningRule::STANDARD;
+
+  bool swapOffered = false;
+  bool swap2FirstPhase = false;
+  int swap2StonesPlaced = 0;
+};
+
 struct Coord {
   int x;
   int y;
