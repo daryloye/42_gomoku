@@ -31,32 +31,32 @@ MinimaxResult Minimax::minimax(const Grid &grid, Coord lastMove, int depth,
       auto tmp = grid;
       tmp[move.y][move.x] = _aiColour;
       if (hasPlayerWon(move, _aiColour, tmp))
-        return {1.0e+10f, move};
+        return {INT_MAX, move};
       if (isThreatDetected(move, _aiColour, tmp))
-        return {1.0e+9f, move};
+        return {INT_MAX / 10, move};
     }
   } else {
     for (Coord move : moves) {
       auto tmp = grid;
       tmp[move.y][move.x] = _opponentColour;
       if (hasPlayerWon(move, _opponentColour, tmp))
-        return {-1.0e+10f, move};
+        return {INT_MIN, move};
       if (isThreatDetected(move, _opponentColour, tmp))
-        return {-1.0e+9f, move};
+        return {INT_MIN / 10, move};
     }
   }
 
   if (depth == 0 || moves.empty()) {
-    float score = evaluateMove(grid);
+    int score = evaluateMove(grid);
     return {score, lastMove};
   }
 
   MinimaxResult best = (currentColour == _aiColour)
-                           ? MinimaxResult{-INFINITY, {}}
-                           : MinimaxResult{INFINITY, {}};
+                           ? MinimaxResult{INT_MIN, {}}
+                           : MinimaxResult{INT_MAX, {}};
 
   for (Coord move : moves) {
-    auto new_grid = grid;
+    auto new_grid = grid;     // deep copy
     new_grid[move.y][move.x] = currentColour;
 
     // Next level -> swap colours
@@ -115,9 +115,9 @@ std::vector<Coord> Minimax::getPossibleMoves(const Grid &grid) {
   return ret;
 }
 
-float Minimax::evaluateMove(const Grid &grid) {
+int Minimax::evaluateMove(const Grid &grid) {
   int aiBest = 0;
-  int oppBest = 0;
+  int oppBest = 0;  
   for (int y = 0; y < BOARD_SIZE; y++) {
     for (int x = 0; x < BOARD_SIZE; x++) {
       if (grid[y][x] == _aiColour) {
@@ -176,4 +176,17 @@ float Minimax::evaluateMove(const Grid &grid) {
   }
 
   return (aiScore - 2 * oppScore);
+}
+
+// evaluateMove checks for x in a row
+int Minimax::evaluateMoveV2(const Grid &grid) {
+  // horizontal
+  for (int y = 0; y < BOARD_SIZE; y++) {
+    for (int x = 0; x < BOARD_SIZE; x++) {
+      Stone color = grid[y][x];
+      for (int i = 0; i < 5; i++) {
+
+      }
+    }
+  }
 }
