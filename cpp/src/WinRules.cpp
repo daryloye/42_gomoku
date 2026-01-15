@@ -82,8 +82,7 @@ int countCapturedPairs(Coord move, Stone colour, const Grid &grid) {
     if (py1 >= 0 && py1 < BOARD_SIZE && px1 >= 0 && px1 < BOARD_SIZE &&
         py2 >= 0 && py2 < BOARD_SIZE && px2 >= 0 && px2 < BOARD_SIZE &&
         py3 >= 0 && py3 < BOARD_SIZE && px3 >= 0 && px3 < BOARD_SIZE) {
-      if (grid[py1][px1] == opponent &&
-          grid[py2][px2] == opponent &&
+      if (grid[py1][px1] == opponent && grid[py2][px2] == opponent &&
           grid[py3][px3] == colour) {
         capturedCount++;
       }
@@ -97,8 +96,7 @@ int countCapturedPairs(Coord move, Stone colour, const Grid &grid) {
     if (ny1 >= 0 && ny1 < BOARD_SIZE && nx1 >= 0 && nx1 < BOARD_SIZE &&
         ny2 >= 0 && ny2 < BOARD_SIZE && nx2 >= 0 && nx2 < BOARD_SIZE &&
         ny3 >= 0 && ny3 < BOARD_SIZE && nx3 >= 0 && nx3 < BOARD_SIZE) {
-      if (grid[ny1][nx1] == opponent &&
-          grid[ny2][nx2] == opponent &&
+      if (grid[ny1][nx1] == opponent && grid[ny2][nx2] == opponent &&
           grid[ny3][nx3] == colour) {
         capturedCount++;
       }
@@ -211,12 +209,7 @@ bool canOpponentBreakFiveByCapture(Coord move, Stone colour, const Grid &grid) {
   Stone opponent = (colour == Stone::BLACK) ? Stone::WHITE : Stone::BLACK;
 
   for (const Coord &pos : fivePositions) {
-    const int captureDirections[4][2] = {
-        {1, 0}, // horizontal
-        {0, 1}, // vertical
-        {1, 1}, // diagonal down-right
-        {1, -1} // diagonal down-left
-    };
+    const int captureDirections[4][2] = {{1, 0}, {0, 1}, {1, 1}, {1, -1}};
 
     for (const auto &dir : captureDirections) {
       int dx = dir[0];

@@ -3,9 +3,9 @@
 
 constexpr int BOARD_SIZE = 19;
 constexpr int CELL_SIZE = 40;
-constexpr int OFFSET = 20;
-constexpr int TEXT_MARGIN = 60;
-constexpr int BOTTOM_MARGIN = 50;
+constexpr int OFFSET = 50;
+constexpr int TEXT_MARGIN = 35;
+constexpr int BOTTOM_MARGIN = 65;
 constexpr int BUTTON_PANEL_WIDTH = 180;
 
 constexpr int BOARD_WIDTH = BOARD_SIZE * CELL_SIZE;

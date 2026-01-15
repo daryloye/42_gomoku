@@ -1,7 +1,6 @@
 #include "Gomoku.hpp"
 
-GomokuBoard::GomokuBoard(void) : Fl_Window(WIN_WIDTH, WIN_HEIGHT, "Gomoku")
-{
+GomokuBoard::GomokuBoard(void) : Fl_Window(WIN_WIDTH, WIN_HEIGHT, "Gomoku") {
   reset();
   resizable(nullptr);
   end();
@@ -9,11 +8,9 @@ GomokuBoard::GomokuBoard(void) : Fl_Window(WIN_WIDTH, WIN_HEIGHT, "Gomoku")
 
 GomokuBoard::~GomokuBoard(void) {}
 
-void GomokuBoard::reset(void)
-{
+void GomokuBoard::reset(void) {
   for (int y = 0; y < BOARD_SIZE; y++)
-    for (int x = 0; x < BOARD_SIZE; x++)
-    {
+    for (int x = 0; x < BOARD_SIZE; x++) {
       grid[y][x] = Stone::EMPTY;
       lastEvaluationHeatmap[y][x] = 0;
     }
@@ -37,25 +34,19 @@ void GomokuBoard::reset(void)
   heatmapNeedsRedraw = false;
   timer.resetAll();
 
-  gameRules.swapOffered = false;
-  gameRules.swap2FirstPhase = false;
-  gameRules.swap2StonesPlaced = 0;
-
-  if (gameRules.openingRule == OpeningRule::SWAP2) {
-    gameRules.swap2FirstPhase = true;
-  }
+  moveHistory.clear();
+  currentHistoryIndex = -1;
+  winningLine.clear();
 }
 
-Stone GomokuBoard::getStone(Coord cell) const
-{
+Stone GomokuBoard::getStone(Coord cell) const {
   if (cell.x < 0 || cell.x >= BOARD_SIZE || cell.y < 0 || cell.y >= BOARD_SIZE)
     return (Stone::EMPTY);
 
   return (grid[cell.y][cell.x]);
 }
 
-void GomokuBoard::setStone(Coord cell, Stone stone)
-{
+void GomokuBoard::setStone(Coord cell, Stone stone) {
   if (cell.x >= 0 && cell.x < BOARD_SIZE && cell.y >= 0 && cell.y < BOARD_SIZE)
     grid[cell.y][cell.x] = stone;
 }
@@ -91,12 +82,7 @@ bool GomokuBoard::checkWin(Coord cell, Stone stone) const {
 
 void GomokuBoard::analyzeDoubleThree(Coord move, Stone colour,
                                      std::array<bool, 4> &directions) {
-  const int dirs[4][2] = {
-      {1, 0}, // horizontal
-      {0, 1}, // vertical
-      {1, 1}, // diagonal down-right
-      {1, -1} // diagonal down-left
-  };
+  const int dirs[4][2] = {{1, 0}, {0, 1}, {1, 1}, {1, -1}};
 
   for (int d = 0; d < 4; d++) {
     int dx = dirs[d][0];
@@ -155,6 +141,19 @@ int GomokuBoard::handle(int event) {
 
   if (event == FL_KEYDOWN) {
     int key = Fl::event_key();
+    int state = Fl::event_state();
+
+    if (key == 'z' && (state & FL_CTRL)) {
+      undo();
+      return 1;
+    }
+
+    if ((key == 'y' && (state & FL_CTRL)) ||
+        (key == 'z' && (state & FL_CTRL) && (state & FL_SHIFT))) {
+      redo();
+      return 1;
+    }
+
     if (key == '1') {
       gameMode = GameMode::TWO_PLAYER;
       reset();
@@ -169,9 +168,7 @@ int GomokuBoard::handle(int event) {
     }
   }
 
-  // Show outline when mouse moves
   if (event == FL_MOVE) {
-    // Don't show outline if game is over
     if (winner != Stone::EMPTY) {
       return 1;
     }
@@ -205,7 +202,8 @@ int GomokuBoard::handle(int event) {
       return 1;
     }
 
-    if (gameRules.doubleThreeEnabled && createsDoubleThree(cell, currentPlayer, grid)) {
+    if (gameRules.doubleThreeEnabled &&
+        createsDoubleThree(cell, currentPlayer, grid)) {
       illegalMoveCell = cell;
       hasIllegalMove = true;
       illegalDirections = {false, false, false, false};
@@ -227,21 +225,11 @@ int GomokuBoard::handle(int event) {
     else
       whiteMoveCount++;
 
-    if (gameRules.openingRule == OpeningRule::SWAP2 && gameRules.swap2FirstPhase) {
-      gameRules.swap2StonesPlaced++;
-      if (gameRules.swap2StonesPlaced <= 2) {
-        setStone(cell, Stone::BLACK);
-      } else if (gameRules.swap2StonesPlaced == 3) {
-        setStone(cell, Stone::WHITE);
-        gameRules.swap2FirstPhase = false;
-        currentPlayer = Stone::WHITE;
-        // TODO: Show swap2 decision UI
-      }
-      redraw();
-      return 1;
-    }
-
     setStone(cell, currentPlayer);
+    lastMove = cell;
+
+    int blackCapturedBefore = blackCaptured;
+    int whiteCapturedBefore = whiteCaptured;
 
     int capturedPairs = 0;
     if (gameRules.capturesEnabled) {
@@ -262,7 +250,6 @@ int GomokuBoard::handle(int event) {
         int dx = dir[0];
         int dy = dir[1];
 
-        // Check positive direction
         int py1 = cell.y + dy, px1 = cell.x + dx;
         int py2 = cell.y + 2 * dy, px2 = cell.x + 2 * dx;
         int py3 = cell.y + 3 * dy, px3 = cell.x + 3 * dx;
@@ -275,7 +262,6 @@ int GomokuBoard::handle(int event) {
           grid[py2][px2] = Stone::EMPTY;
         }
 
-        // Check negative direction
         int ny1 = cell.y - dy, nx1 = cell.x - dx;
         int ny2 = cell.y - 2 * dy, nx2 = cell.x - 2 * dx;
         int ny3 = cell.y - 3 * dy, nx3 = cell.x - 3 * dx;
@@ -290,7 +276,6 @@ int GomokuBoard::handle(int event) {
       }
     }
 
-    // Check win conditions according to endgame capture rules
     bool hasFiveInRow = checkWin(cell, currentPlayer);
     bool opponentCanBreakFive = false;
 
@@ -323,21 +308,14 @@ int GomokuBoard::handle(int event) {
 
     if (winByAlignment || winByCapture || winByCaptureThreat) {
       winner = currentPlayer;
-      // Clear outline stone when game ends
+      if (winByAlignment) {
+        winningLine = getFiveInARowPositions(cell, currentPlayer, grid);
+      }
       setStone(previousOutlineCell, Stone::EMPTY);
       previousOutlineCell = {-1, -1};
     } else {
       currentPlayer =
           (currentPlayer == Stone::BLACK) ? Stone::WHITE : Stone::BLACK;
-
-      // Handle SWAP opening rule: after first move, offer WHITE the option to swap
-      if (gameRules.openingRule == OpeningRule::SWAP && blackMoveCount == 1 &&
-          whiteMoveCount == 0 && currentPlayer == Stone::WHITE) {
-        gameRules.swapOffered = true;
-        timer.resetTimer();
-        redraw();
-        return 1;  // Wait for swap decision
-      }
 
       if (gameMode == GameMode::AI_VS_HUMAN && currentPlayer == aiColor) {
         isAiThinking = true;
@@ -351,11 +329,14 @@ int GomokuBoard::handle(int event) {
             this);
       }
 
-      // Auto-update suggestion for next turn if suggestion is enabled
       if (showSuggestion) {
         updateSuggestion();
       }
     }
+
+    // Record move to history for undo/redo
+    recordMoveToHistory(cell, currentPlayer, blackCapturedBefore,
+                        whiteCapturedBefore);
 
     timer.resetTimer();
     redraw();
@@ -418,135 +399,148 @@ void GomokuBoard::makeAIMove() {
     MinimaxResult aiResult =
         m.minimax(grid, lastMove, 10, currentPlayer, opponentColor);
 
-  lastEvaluationHeatmap = m.getEvaluationHeatmap();
-  heatmapNeedsRedraw = true;
+    lastEvaluationHeatmap = m.getEvaluationHeatmap();
+    heatmapNeedsRedraw = true;
 
-  setStone(aiResult.move, currentPlayer);
+    setStone(aiResult.move, currentPlayer);
+    this->lastMove = aiResult.move;
 
-  if (currentPlayer == Stone::BLACK) {
-    blackMoveCount++;
-  } else {
-    whiteMoveCount++;
-  }
+    if (currentPlayer == Stone::BLACK) {
+      blackMoveCount++;
+    } else {
+      whiteMoveCount++;
+    }
 
-  int capturedPairs = countCapturedPairs(aiResult.move, currentPlayer, grid);
-  if (currentPlayer == Stone::BLACK) {
-    blackCaptured += capturedPairs;
-  } else {
-    whiteCaptured += capturedPairs;
-  }
+    // Save capture counts before applying captures
+    int blackCapturedBefore = blackCaptured;
+    int whiteCapturedBefore = whiteCaptured;
 
-  if (capturedPairs > 0) {
-    Stone opponent =
-        (currentPlayer == Stone::BLACK) ? Stone::WHITE : Stone::BLACK;
-    const int directions[4][2] = {{1, 0}, {0, 1}, {1, 1}, {1, -1}};
+    int capturedPairs = countCapturedPairs(aiResult.move, currentPlayer, grid);
+    if (currentPlayer == Stone::BLACK) {
+      blackCaptured += capturedPairs;
+    } else {
+      whiteCaptured += capturedPairs;
+    }
 
-    for (const auto &dir : directions) {
-      int dx = dir[0];
-      int dy = dir[1];
+    if (capturedPairs > 0) {
+      Stone opponent =
+          (currentPlayer == Stone::BLACK) ? Stone::WHITE : Stone::BLACK;
+      const int directions[4][2] = {{1, 0}, {0, 1}, {1, 1}, {1, -1}};
 
-      int py1 = aiResult.move.y + dy, px1 = aiResult.move.x + dx;
-      int py2 = aiResult.move.y + 2 * dy, px2 = aiResult.move.x + 2 * dx;
-      int py3 = aiResult.move.y + 3 * dy, px3 = aiResult.move.x + 3 * dx;
-      if (py1 >= 0 && py1 < BOARD_SIZE && px1 >= 0 && px1 < BOARD_SIZE &&
-          py2 >= 0 && py2 < BOARD_SIZE && px2 >= 0 && px2 < BOARD_SIZE &&
-          py3 >= 0 && py3 < BOARD_SIZE && px3 >= 0 && px3 < BOARD_SIZE &&
-          grid[py1][px1] == opponent && grid[py2][px2] == opponent &&
-          grid[py3][px3] == currentPlayer) {
-        grid[py1][px1] = Stone::EMPTY;
-        grid[py2][px2] = Stone::EMPTY;
-      }
+      for (const auto &dir : directions) {
+        int dx = dir[0];
+        int dy = dir[1];
 
-      int ny1 = aiResult.move.y - dy, nx1 = aiResult.move.x - dx;
-      int ny2 = aiResult.move.y - 2 * dy, nx2 = aiResult.move.x - 2 * dx;
-      int ny3 = aiResult.move.y - 3 * dy, nx3 = aiResult.move.x - 3 * dx;
-      if (ny1 >= 0 && ny1 < BOARD_SIZE && nx1 >= 0 && nx1 < BOARD_SIZE &&
-          ny2 >= 0 && ny2 < BOARD_SIZE && nx2 >= 0 && nx2 < BOARD_SIZE &&
-          ny3 >= 0 && ny3 < BOARD_SIZE && nx3 >= 0 && nx3 < BOARD_SIZE &&
-          grid[ny1][nx1] == opponent && grid[ny2][nx2] == opponent &&
-          grid[ny3][nx3] == currentPlayer) {
-        grid[ny1][nx1] = Stone::EMPTY;
-        grid[ny2][nx2] = Stone::EMPTY;
+        int py1 = aiResult.move.y + dy, px1 = aiResult.move.x + dx;
+        int py2 = aiResult.move.y + 2 * dy, px2 = aiResult.move.x + 2 * dx;
+        int py3 = aiResult.move.y + 3 * dy, px3 = aiResult.move.x + 3 * dx;
+        if (py1 >= 0 && py1 < BOARD_SIZE && px1 >= 0 && px1 < BOARD_SIZE &&
+            py2 >= 0 && py2 < BOARD_SIZE && px2 >= 0 && px2 < BOARD_SIZE &&
+            py3 >= 0 && py3 < BOARD_SIZE && px3 >= 0 && px3 < BOARD_SIZE &&
+            grid[py1][px1] == opponent && grid[py2][px2] == opponent &&
+            grid[py3][px3] == currentPlayer) {
+          grid[py1][px1] = Stone::EMPTY;
+          grid[py2][px2] = Stone::EMPTY;
+        }
+
+        int ny1 = aiResult.move.y - dy, nx1 = aiResult.move.x - dx;
+        int ny2 = aiResult.move.y - 2 * dy, nx2 = aiResult.move.x - 2 * dx;
+        int ny3 = aiResult.move.y - 3 * dy, nx3 = aiResult.move.x - 3 * dx;
+        if (ny1 >= 0 && ny1 < BOARD_SIZE && nx1 >= 0 && nx1 < BOARD_SIZE &&
+            ny2 >= 0 && ny2 < BOARD_SIZE && nx2 >= 0 && nx2 < BOARD_SIZE &&
+            ny3 >= 0 && ny3 < BOARD_SIZE && nx3 >= 0 && nx3 < BOARD_SIZE &&
+            grid[ny1][nx1] == opponent && grid[ny2][nx2] == opponent &&
+            grid[ny3][nx3] == currentPlayer) {
+          grid[ny1][nx1] = Stone::EMPTY;
+          grid[ny2][nx2] = Stone::EMPTY;
+        }
       }
     }
-  }
 
-  bool hasFiveInRow = checkWin(aiResult.move, currentPlayer);
-  bool opponentCanBreakFive = false;
+    bool hasFiveInRow = checkWin(aiResult.move, currentPlayer);
+    bool opponentCanBreakFive = false;
 
-  if (hasFiveInRow) {
-    opponentCanBreakFive =
-        canOpponentBreakFiveByCapture(aiResult.move, currentPlayer, grid);
-  }
+    if (hasFiveInRow) {
+      opponentCanBreakFive =
+          canOpponentBreakFiveByCapture(aiResult.move, currentPlayer, grid);
+    }
 
-  bool winByAlignment = hasFiveInRow && !opponentCanBreakFive;
-  bool winByCapture = (currentPlayer == Stone::BLACK) ? (blackCaptured >= 10)
-                                                      : (whiteCaptured >= 10);
+    bool winByAlignment = hasFiveInRow && !opponentCanBreakFive;
+    bool winByCapture = (currentPlayer == Stone::BLACK) ? (blackCaptured >= 10)
+                                                        : (whiteCaptured >= 10);
 
-  int opponentLostStones =
-      (currentPlayer == Stone::BLACK) ? whiteCaptured : blackCaptured;
-  bool winByCaptureThreat = false;
+    int opponentLostStones =
+        (currentPlayer == Stone::BLACK) ? whiteCaptured : blackCaptured;
+    bool winByCaptureThreat = false;
 
-  if (opponentLostStones >= 8) {
-    for (int y = 0; y < BOARD_SIZE && !winByCaptureThreat; y++) {
-      for (int x = 0; x < BOARD_SIZE && !winByCaptureThreat; x++) {
-        if (grid[y][x] == Stone::EMPTY) {
-          Coord testMove = {x, y};
-          if (countCapturedPairs(testMove, currentPlayer, grid) > 0) {
-            winByCaptureThreat = true;
+    if (opponentLostStones >= 8) {
+      for (int y = 0; y < BOARD_SIZE && !winByCaptureThreat; y++) {
+        for (int x = 0; x < BOARD_SIZE && !winByCaptureThreat; x++) {
+          if (grid[y][x] == Stone::EMPTY) {
+            Coord testMove = {x, y};
+            if (countCapturedPairs(testMove, currentPlayer, grid) > 0) {
+              winByCaptureThreat = true;
+            }
           }
         }
       }
     }
-  }
 
-  if (winByAlignment || winByCapture || winByCaptureThreat) {
-    winner = currentPlayer;
-    setStone(previousOutlineCell, Stone::EMPTY);
-    previousOutlineCell = {-1, -1};
-  } else {
-    currentPlayer =
-        (currentPlayer == Stone::BLACK) ? Stone::WHITE : Stone::BLACK;
-  }
-
-  auto now = std::chrono::steady_clock::now();
-  auto thinkDuration = std::chrono::duration_cast<std::chrono::milliseconds>(
-      now - aiThinkStartTime);
-  aiThinkTime = thinkDuration.count();
-
-  timer.calculateTimeSpentOnMove(aiColor);
-
-  timer.resetTimer();
-
-  // Print AI move statistics
-  int totalNodesEvaluated = 0;
-  for (int y = 0; y < BOARD_SIZE; y++) {
-    for (int x = 0; x < BOARD_SIZE; x++) {
-      totalNodesEvaluated += lastEvaluationHeatmap[y][x];
+    if (winByAlignment || winByCapture || winByCaptureThreat) {
+      winner = currentPlayer;
+      // Store winning line if win by alignment
+      if (winByAlignment) {
+        winningLine =
+            getFiveInARowPositions(aiResult.move, currentPlayer, grid);
+      }
+      setStone(previousOutlineCell, Stone::EMPTY);
+      previousOutlineCell = {-1, -1};
+    } else {
+      currentPlayer =
+          (currentPlayer == Stone::BLACK) ? Stone::WHITE : Stone::BLACK;
     }
-  }
 
-  std::cout << "AI (" << (aiPlayer == Stone::BLACK ? "BLACK" : "WHITE")
-            << "): " << aiResult.move << " | Score: " << aiResult.score
-            << " | Time: " << aiThinkTime << "ms | Nodes: " << totalNodesEvaluated << std::endl;
-  std::cout << "Captures: " << capturedPairs << " | Total - B:" << blackCaptured
-            << " W:" << whiteCaptured << " | Moves - B:" << blackMoveCount
-            << " W:" << whiteMoveCount << std::endl;
+    auto now = std::chrono::steady_clock::now();
+    auto thinkDuration = std::chrono::duration_cast<std::chrono::milliseconds>(
+        now - aiThinkStartTime);
+    aiThinkTime = thinkDuration.count();
 
-  isAiThinking = false;
-  redraw();
-  }
-  catch (const std::bad_alloc& e) {
+    timer.calculateTimeSpentOnMove(aiColor);
+
+    // Record move to history for undo/redo
+    recordMoveToHistory(aiResult.move, aiPlayer, blackCapturedBefore,
+                        whiteCapturedBefore);
+
+    timer.resetTimer();
+
+    // Print AI move statistics
+    int totalNodesEvaluated = 0;
+    for (int y = 0; y < BOARD_SIZE; y++) {
+      for (int x = 0; x < BOARD_SIZE; x++) {
+        totalNodesEvaluated += lastEvaluationHeatmap[y][x];
+      }
+    }
+
+    std::cout << "AI (" << (aiPlayer == Stone::BLACK ? "BLACK" : "WHITE")
+              << "): " << aiResult.move << " | Score: " << aiResult.score
+              << " | Time: " << aiThinkTime
+              << "ms | Nodes: " << totalNodesEvaluated << std::endl;
+    std::cout << "Captures: " << capturedPairs
+              << " | Total - B:" << blackCaptured << " W:" << whiteCaptured
+              << " | Moves - B:" << blackMoveCount << " W:" << whiteMoveCount
+              << std::endl;
+
+    isAiThinking = false;
+    redraw();
+  } catch (const std::bad_alloc &e) {
     std::cerr << "AI Error: Out of memory - " << e.what() << std::endl;
     isAiThinking = false;
     redraw();
-  }
-  catch (const std::exception& e) {
+  } catch (const std::exception &e) {
     std::cerr << "AI Error: Exception occurred - " << e.what() << std::endl;
     isAiThinking = false;
     redraw();
-  }
-  catch (...) {
+  } catch (...) {
     std::cerr << "AI Error: Unknown exception occurred" << std::endl;
     isAiThinking = false;
     redraw();
@@ -555,7 +549,7 @@ void GomokuBoard::makeAIMove() {
 
 bool GomokuBoard::clickedModeButton(int x, int y) {
   int buttonX = OFFSET + BOARD_WIDTH + 10;
-  int buttonY = 50;
+  int buttonY = 100;
   int buttonW = 70;
   int buttonH = 35;
 
@@ -606,20 +600,32 @@ bool GomokuBoard::clickedModeButton(int x, int y) {
     }
   }
 
-  int configY = buttonY + 4 * (buttonH + 5) + 20;
-  configY += 25;  // Skip "Rules:" label
-
-  if (x >= buttonX && x <= buttonX + buttonW && y >= configY && y <= configY + 25) {
-    int current = (int)gameRules.openingRule;
-    gameRules.openingRule = (OpeningRule)((current + 1) % 4);
-    reset();
-    redraw();
+  // UNDO button
+  if (x >= buttonX && x <= buttonX + buttonW &&
+      y >= buttonY + 4 * (buttonH + 5) && y <= buttonY + 5 * buttonH + 20) {
+    if (currentHistoryIndex > 0) {
+      undo();
+      redraw();
+    }
     return false;
   }
-  configY += 35;
 
-  int checkBoxSize = 15;
-  if (x >= buttonX && x <= buttonX + checkBoxSize && y >= configY && y <= configY + checkBoxSize) {
+  // REDO button
+  if (x >= buttonX && x <= buttonX + buttonW &&
+      y >= buttonY + 5 * (buttonH + 5) && y <= buttonY + 6 * buttonH + 25) {
+    if (currentHistoryIndex < (int)moveHistory.size() - 1) {
+      redo();
+      redraw();
+    }
+    return false;
+  }
+
+  int configY = buttonY + 6 * (buttonH + 5) + 50;
+  configY += 30; // Skip "Rules:" label
+
+  int checkBoxSize = 22;
+  if (x >= buttonX && x <= buttonX + checkBoxSize && y >= configY &&
+      y <= configY + checkBoxSize) {
     gameRules.capturesEnabled = !gameRules.capturesEnabled;
     reset();
     redraw();
@@ -627,24 +633,14 @@ bool GomokuBoard::clickedModeButton(int x, int y) {
   }
   configY += 25;
 
-  if (x >= buttonX && x <= buttonX + checkBoxSize && y >= configY && y <= configY + checkBoxSize) {
+  if (x >= buttonX && x <= buttonX + checkBoxSize && y >= configY &&
+      y <= configY + checkBoxSize) {
     gameRules.doubleThreeEnabled = !gameRules.doubleThreeEnabled;
     reset();
     redraw();
     return false;
   }
   configY += 25;
-
-  if (gameRules.openingRule == OpeningRule::SWAP && gameRules.swapOffered) {
-    if (x >= buttonX + 10 && x <= buttonX + 30 && y >= configY + 15 && y <= configY + 30) {
-      handleSwapDecision(true);
-      return false;
-    }
-    if (x >= buttonX + 40 && x <= buttonX + 60 && y >= configY + 15 && y <= configY + 30) {
-      handleSwapDecision(false);
-      return false;
-    }
-  }
 
   return false;
 }
@@ -661,48 +657,92 @@ void GomokuBoard::updateSuggestion() {
     Coord lastMove = {-1, -1};
     suggestedMove = m.minimax(grid, lastMove, 10, currentPlayer, opponent);
     suggestionForPlayer = currentPlayer;
-  }
-  catch (const std::bad_alloc& e) {
+  } catch (const std::bad_alloc &e) {
     std::cerr << "Suggestion Error: Out of memory - " << e.what() << std::endl;
     showSuggestion = false;
-  }
-  catch (const std::exception& e) {
-    std::cerr << "Suggestion Error: Exception occurred - " << e.what() << std::endl;
+  } catch (const std::exception &e) {
+    std::cerr << "Suggestion Error: Exception occurred - " << e.what()
+              << std::endl;
     showSuggestion = false;
-  }
-  catch (...) {
+  } catch (...) {
     std::cerr << "Suggestion Error: Unknown exception occurred" << std::endl;
     showSuggestion = false;
   }
 }
 
-void GomokuBoard::handleSwapDecision(bool acceptSwap) {
-  if (acceptSwap) {
-    if (gameMode == GameMode::AI_VS_HUMAN) {
-      aiColor = (aiColor == Stone::BLACK) ? Stone::WHITE : Stone::BLACK;
-    }
+void GomokuBoard::recordMoveToHistory(Coord move, Stone player,
+                                      int blackCapturedBefore,
+                                      int whiteCapturedBefore) {
+  // Clear redo history if we're making a new move after undoing
+  if (currentHistoryIndex < (int)moveHistory.size() - 1) {
+    moveHistory.erase(moveHistory.begin() + currentHistoryIndex + 1,
+                      moveHistory.end());
   }
-  currentPlayer = acceptSwap ? Stone::BLACK : Stone::WHITE;
-  gameRules.swapOffered = false;
+
+  // Record the current board state after the move
+  MoveRecord record;
+  record.move = move;
+  record.player = player;
+  record.boardState = grid;
+  record.blackCapturedBefore = blackCapturedBefore;
+  record.whiteCapturedBefore = whiteCapturedBefore;
+  record.blackTimeAtMove = timer.totalBlackTime;
+  record.whiteTimeAtMove = timer.totalWhiteTime;
+
+  moveHistory.push_back(record);
+  currentHistoryIndex++;
+}
+
+void GomokuBoard::undo() {
+  if (currentHistoryIndex <= 0) {
+    return;
+  }
+
+  currentHistoryIndex--;
+  const MoveRecord &record = moveHistory[currentHistoryIndex];
+
+  grid = record.boardState;
+
+  blackCaptured = record.blackCapturedBefore;
+  whiteCaptured = record.whiteCapturedBefore;
+
+  currentPlayer = (record.player == Stone::BLACK) ? Stone::WHITE : Stone::BLACK;
+
+  winner = Stone::EMPTY;
+
+  previousOutlineCell = {-1, -1};
+  hasIllegalMove = false;
+  illegalMoveCell = {-1, -1};
+
   redraw();
 }
 
-void GomokuBoard::handleSwap2Decision(int choice) {
-  if (choice == 0) {
-    if (gameMode == GameMode::AI_VS_HUMAN) {
-      aiColor = Stone::WHITE;
-    }
-    currentPlayer = Stone::BLACK;
-    gameRules.swap2FirstPhase = false;
-  } else if (choice == 1) {
-    if (gameMode == GameMode::AI_VS_HUMAN) {
-      aiColor = Stone::BLACK;
-    }
-    currentPlayer = Stone::WHITE;
-    gameRules.swap2FirstPhase = false;
-  } else if (choice == 2) {
-    gameRules.swap2FirstPhase = true;
-    currentPlayer = Stone::BLACK;
+void GomokuBoard::redo() {
+  if (currentHistoryIndex >= (int)moveHistory.size() - 1) {
+    return;
   }
+
+  currentHistoryIndex++;
+  const MoveRecord &record = moveHistory[currentHistoryIndex];
+
+  grid = record.boardState;
+
+  if (currentHistoryIndex + 1 < (int)moveHistory.size()) {
+    const MoveRecord &nextRecord = moveHistory[currentHistoryIndex + 1];
+    blackCaptured = nextRecord.blackCapturedBefore;
+    whiteCaptured = nextRecord.whiteCapturedBefore;
+  } else {
+    blackCaptured = record.blackCapturedBefore;
+    whiteCaptured = record.whiteCapturedBefore;
+  }
+
+  currentPlayer = (record.player == Stone::BLACK) ? Stone::WHITE : Stone::BLACK;
+
+  winner = Stone::EMPTY;
+
+  previousOutlineCell = {-1, -1};
+  hasIllegalMove = false;
+  illegalMoveCell = {-1, -1};
+
   redraw();
 }

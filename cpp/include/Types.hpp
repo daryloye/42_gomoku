@@ -18,21 +18,9 @@ enum class GameMode {
   AI_VS_HUMAN = 1,
 };
 
-enum class OpeningRule {
-  STANDARD = 0,
-  PRO = 1,
-  SWAP = 2,
-  SWAP2 = 3
-};
-
 struct GameRules {
   bool capturesEnabled = true;
   bool doubleThreeEnabled = true;
-  OpeningRule openingRule = OpeningRule::STANDARD;
-
-  bool swapOffered = false;
-  bool swap2FirstPhase = false;
-  int swap2StonesPlaced = 0;
 };
 
 struct Coord {
@@ -40,13 +28,22 @@ struct Coord {
   int y;
 };
 
+typedef std::array<std::array<int, BOARD_SIZE>, BOARD_SIZE> CountGrid;
+typedef std::array<std::array<Stone, BOARD_SIZE>, BOARD_SIZE> Grid;
+
 struct MinimaxResult {
   float score;
   Coord move;
 };
 
-
-typedef std::array<std::array<int, BOARD_SIZE>, BOARD_SIZE> CountGrid;
-typedef std::array<std::array<Stone, BOARD_SIZE>, BOARD_SIZE> Grid;
+struct MoveRecord {
+  Coord move;
+  Stone player;
+  Grid boardState;
+  int blackCapturedBefore;
+  int whiteCapturedBefore;
+  float blackTimeAtMove;
+  float whiteTimeAtMove;
+};
 
 #endif

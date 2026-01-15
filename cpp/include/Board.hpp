@@ -2,8 +2,7 @@
 #define BOARD_HPP
 
 // https://www.fltk.org/doc-1.4/classFl__Window.html
-class GomokuBoard : public Fl_Window
-{
+class GomokuBoard : public Fl_Window {
 public:
   GomokuBoard();
   ~GomokuBoard();
@@ -18,6 +17,7 @@ private:
   Stone currentPlayer;
   Stone winner;
   Coord previousOutlineCell;
+  Coord lastMove = {-1, -1};
 
   bool fontsInitialized = false;
 
@@ -47,6 +47,11 @@ private:
   bool showHeatmap = false;
   bool heatmapNeedsRedraw = false;
 
+  std::vector<MoveRecord> moveHistory;
+  int currentHistoryIndex = -1;
+
+  std::vector<Coord> winningLine;
+
   void reset();
   Stone getStone(Coord cell) const;
   void setStone(Coord cell, Stone p);
@@ -56,11 +61,13 @@ private:
   void drawModeButtons();
   void makeAIMove();
   bool clickedModeButton(int x, int y);
-  void handleSwapDecision(bool acceptSwap);
-  void handleSwap2Decision(int choice);
   void analyzeDoubleThree(Coord move, Stone colour,
                           std::array<bool, 4> &directions);
   void updateSuggestion();
+  void recordMoveToHistory(Coord move, Stone player, int blackCapturedBefore,
+                           int whiteCapturedBefore);
+  void undo();
+  void redo();
 };
 
 #endif

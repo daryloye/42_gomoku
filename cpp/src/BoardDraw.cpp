@@ -28,6 +28,18 @@ void GomokuBoard::drawBoard() {
     fl_line(boardStartX, ypos, boardEndX, ypos);
   }
 
+  for (int x = 0; x < BOARD_SIZE; x++) {
+    char label[2] = {(char)('A' + x), '\0'};
+    int xpos = boardStartX + x * CELL_SIZE - 3;
+    BitmapFont::drawText(label, xpos, boardYOffset + OFFSET - 15, 1);
+  }
+  for (int y = 0; y < BOARD_SIZE; y++) {
+    char label[3];
+    snprintf(label, sizeof(label), "%d", y + 1);
+    int ypos = boardStartY + y * CELL_SIZE - 4;
+    BitmapFont::drawText(label, OFFSET - 35, ypos, 1);
+  }
+
   int r = CELL_SIZE / 2 - 2;
 
   fl_color(0, 0, 0);
@@ -68,6 +80,28 @@ void GomokuBoard::drawBoard() {
         fl_pie(sx - r, sy - r, r * 2, r * 2, 0, 360);
       }
     }
+  }
+
+  if (winner != Stone::EMPTY && !winningLine.empty()) {
+    fl_color(255, 0, 0);
+    fl_line_style(FL_SOLID, 5);
+    for (size_t i = 0; i < winningLine.size() - 1; i++) {
+      int x1 = boardStartX + winningLine[i].x * CELL_SIZE;
+      int y1 = boardStartY + winningLine[i].y * CELL_SIZE;
+      int x2 = boardStartX + winningLine[i + 1].x * CELL_SIZE;
+      int y2 = boardStartY + winningLine[i + 1].y * CELL_SIZE;
+      fl_line(x1, y1, x2, y2);
+    }
+    fl_line_style(FL_SOLID, 2);
+  }
+
+  if (lastMove.x >= 0 && lastMove.y >= 0) {
+    int sx = boardStartX + lastMove.x * CELL_SIZE;
+    int sy = boardStartY + lastMove.y * CELL_SIZE;
+    fl_color(255, 200, 0);
+    fl_line_style(FL_SOLID, 3);
+    fl_arc(sx - r + 3, sy - r + 3, (r - 3) * 2, (r - 3) * 2, 0, 360);
+    fl_line_style(FL_SOLID, 2);
   }
 
   if (showSuggestion && suggestedMove.move.x >= 0) {
@@ -178,12 +212,12 @@ void GomokuBoard::drawBoard() {
 void GomokuBoard::drawModeButtons() {
   fl_line_style(FL_SOLID, 2);
   int buttonX = OFFSET + BOARD_WIDTH + 10;
-  int buttonY = 50;
+  int buttonY = 100;
   int buttonW = 70;
   int buttonH = 35;
 
   fl_color(0, 0, 0);
-  BitmapFont::drawText("Mode:", buttonX, buttonY - 25, 2);
+  BitmapFont::drawText("Mode:", buttonX, buttonY - 45, 2);
 
   if (gameMode == GameMode::TWO_PLAYER)
     fl_color(150, 255, 150);
@@ -207,7 +241,8 @@ void GomokuBoard::drawModeButtons() {
   fl_rectf(buttonX, buttonY + 2 * (buttonH + 5), buttonW, buttonH);
   fl_color(0, 0, 0);
   fl_rect(buttonX, buttonY + 2 * (buttonH + 5), buttonW, buttonH);
-  BitmapFont::drawText("RESET", buttonX + 8, buttonY + 2 * (buttonH + 5) + 10, 1);
+  BitmapFont::drawText("RESET", buttonX + 8, buttonY + 2 * (buttonH + 5) + 10,
+                       1);
 
   if (gameMode == GameMode::TWO_PLAYER && winner == Stone::EMPTY) {
     if (showSuggestion)
@@ -217,7 +252,8 @@ void GomokuBoard::drawModeButtons() {
     fl_rectf(buttonX, buttonY + 3 * (buttonH + 5), buttonW, buttonH);
     fl_color(0, 0, 0);
     fl_rect(buttonX, buttonY + 3 * (buttonH + 5), buttonW, buttonH);
-    BitmapFont::drawText("HINT", buttonX + 10, buttonY + 3 * (buttonH + 5) + 10, 1);
+    BitmapFont::drawText("HINT", buttonX + 10, buttonY + 3 * (buttonH + 5) + 10,
+                         1);
   }
 
   if (gameMode == GameMode::AI_VS_HUMAN) {
@@ -228,31 +264,44 @@ void GomokuBoard::drawModeButtons() {
     fl_rectf(buttonX, buttonY + 3 * (buttonH + 5), buttonW, buttonH);
     fl_color(0, 0, 0);
     fl_rect(buttonX, buttonY + 3 * (buttonH + 5), buttonW, buttonH);
-    BitmapFont::drawText("HEAT", buttonX + 10, buttonY + 3 * (buttonH + 5) + 10, 1);
+    BitmapFont::drawText("HEAT", buttonX + 10, buttonY + 3 * (buttonH + 5) + 10,
+                         1);
   }
 
-  int configY = buttonY + 4 * (buttonH + 5) + 20;
+  if (currentHistoryIndex > 0)
+    fl_color(100, 150, 255);
+  else
+    fl_color(150, 150, 150);
+  fl_rectf(buttonX, buttonY + 4 * (buttonH + 5), buttonW, buttonH);
+  fl_color(0, 0, 0);
+  fl_rect(buttonX, buttonY + 4 * (buttonH + 5), buttonW, buttonH);
+  BitmapFont::drawText("UNDO", buttonX + 8, buttonY + 4 * (buttonH + 5) + 10,
+                       1);
+
+  if (currentHistoryIndex < (int)moveHistory.size() - 1)
+    fl_color(100, 255, 150);
+  else
+    fl_color(150, 150, 150);
+  fl_rectf(buttonX, buttonY + 5 * (buttonH + 5), buttonW, buttonH);
+  fl_color(0, 0, 0);
+  fl_rect(buttonX, buttonY + 5 * (buttonH + 5), buttonW, buttonH);
+  BitmapFont::drawText("REDO", buttonX + 10, buttonY + 5 * (buttonH + 5) + 10,
+                       1);
+
+  int configY = buttonY + 6 * (buttonH + 5) + 50;
 
   fl_color(0, 0, 0);
   BitmapFont::drawText("Rules:", buttonX, configY, 2);
-  configY += 25;
+  configY += 30;
 
-  const char* openingNames[] = {"STD", "PRO", "SW1", "SW2"};
-  fl_color(200, 180, 255);
-  fl_rectf(buttonX, configY, buttonW, 25);
-  fl_color(0, 0, 0);
-  fl_rect(buttonX, configY, buttonW, 25);
-  BitmapFont::drawText(openingNames[(int)gameRules.openingRule], buttonX + 5, configY + 7, 1);
-  configY += 35;
-
-  int checkBoxSize = 15;
+  int checkBoxSize = 22;
   fl_color(255, 255, 255);
   fl_rectf(buttonX, configY, checkBoxSize, checkBoxSize);
   fl_color(0, 0, 0);
   fl_rect(buttonX, configY, checkBoxSize, checkBoxSize);
   if (gameRules.capturesEnabled) {
-    fl_line(buttonX + 2, configY + 7, buttonX + 6, configY + 11);
-    fl_line(buttonX + 6, configY + 11, buttonX + 13, configY + 2);
+    fl_line(buttonX + 3, configY + 14, buttonX + 9, configY + 18);
+    fl_line(buttonX + 9, configY + 18, buttonX + 19, configY + 4);
   }
   BitmapFont::drawText("Capture", buttonX + 20, configY + 3, 1);
   configY += 25;
@@ -262,45 +311,54 @@ void GomokuBoard::drawModeButtons() {
   fl_color(0, 0, 0);
   fl_rect(buttonX, configY, checkBoxSize, checkBoxSize);
   if (gameRules.doubleThreeEnabled) {
-    fl_line(buttonX + 2, configY + 7, buttonX + 6, configY + 11);
-    fl_line(buttonX + 6, configY + 11, buttonX + 13, configY + 2);
+    fl_line(buttonX + 3, configY + 14, buttonX + 9, configY + 18);
+    fl_line(buttonX + 9, configY + 18, buttonX + 19, configY + 4);
   }
   BitmapFont::drawText("No-DT", buttonX + 20, configY + 3, 1);
+  configY += 40;
+
+  fl_color(0, 0, 0);
+  BitmapFont::drawText("[BONUS]", buttonX, configY, 2);
   configY += 25;
 
-  if (gameRules.openingRule == OpeningRule::SWAP && gameRules.swapOffered) {
-    fl_color(255, 200, 100);
-    fl_rectf(buttonX - 5, configY, buttonW + 10, 40);
-    fl_color(0, 0, 0);
-    fl_rect(buttonX - 5, configY, buttonW + 10, 40);
-    BitmapFont::drawText("Swap?", buttonX + 10, configY + 5, 1);
-    BitmapFont::drawText("Y   N", buttonX + 15, configY + 20, 1);
-  } else if (gameRules.openingRule == OpeningRule::SWAP2 && gameRules.swap2FirstPhase) {
-    fl_color(255, 200, 100);
-    fl_rectf(buttonX - 5, configY, buttonW + 10, 25);
-    fl_color(0, 0, 0);
-    fl_rect(buttonX - 5, configY, buttonW + 10, 25);
-    char msg[32];
-    snprintf(msg, sizeof(msg), "SW2:%d/3", gameRules.swap2StonesPlaced);
-    BitmapFont::drawText(msg, buttonX + 10, configY + 7, 1);
-  }
+  BitmapFont::drawText("Undo/Redo", buttonX, configY, 1);
+  configY += 15;
+
+  BitmapFont::drawText("Rules Toggle", buttonX, configY, 1);
+  configY += 15;
+
+  BitmapFont::drawText("Suggestions", buttonX, configY, 1);
+  configY += 15;
+
+  BitmapFont::drawText("AI Heatmap", buttonX, configY, 1);
+  configY += 15;
+
+  BitmapFont::drawText("Move Display", buttonX, configY, 1);
 }
 
 void GomokuBoard::drawUI() {
   const bool gameOver = (winner != Stone::EMPTY);
-  const char* headerText =
-    gameOver
-      ? ((winner == Stone::BLACK) ? "BLACK WINS!" : "WHITE WINS!")
-      : ((currentPlayer == Stone::BLACK)  ? "Current: BLACK" 
-                                          : "Current: WHITE");
-  BitmapFont::drawText(headerText, OFFSET, 35, 2);
+  const char *headerText =
+      gameOver ? ((winner == Stone::BLACK) ? "BLACK WINS!" : "WHITE WINS!")
+               : ((currentPlayer == Stone::BLACK) ? "Current: BLACK"
+                                                  : "Current: WHITE");
+  BitmapFont::drawText(headerText, OFFSET, 12, 2);
 
   const char *modeText = nullptr;
-  switch(gameMode) {
-    case GameMode::TWO_PLAYER: modeText = "Mode: 2-Player"; break;
-    case GameMode::AI_VS_HUMAN: modeText = "Mode: AI vs Human"; break;
+  switch (gameMode) {
+  case GameMode::TWO_PLAYER:
+    modeText = "Mode: 2-Player";
+    break;
+  case GameMode::AI_VS_HUMAN:
+    modeText = "Mode: AI vs Human";
+    break;
   }
-  BitmapFont::drawText(modeText, OFFSET + 450, 35, 2);
+  BitmapFont::drawText(modeText, OFFSET + 450, 12, 2);
+
+  char moveCountStr[40];
+  int totalMoves = blackMoveCount + whiteMoveCount;
+  snprintf(moveCountStr, sizeof(moveCountStr), "Move: %d", totalMoves);
+  BitmapFont::drawText(moveCountStr, OFFSET + 300, 12, 2);
 
   char blackTimeStr[80];
   char whiteTimeStr[80];
@@ -315,13 +373,6 @@ void GomokuBoard::drawUI() {
            "WHITE: avg %.1fms / last %.1fms | Captured: %d", whiteAvg,
            timer.lastWhiteMoveTime, whiteCaptured);
 
-  BitmapFont::drawText(whiteTimeStr, OFFSET, h() - TEXT_MARGIN + 15, 1);
-  BitmapFont::drawText(blackTimeStr, OFFSET, h() - TEXT_MARGIN - 5, 1);
-
-  const char *helpText = nullptr;
-  switch (gameMode) {
-    case GameMode::TWO_PLAYER: helpText = "Use buttons on the right to control the game"; break;
-    case GameMode::AI_VS_HUMAN: helpText = "Use buttons on the right to control the game"; break;
-  }
-  BitmapFont::drawText(helpText, OFFSET, h() - 25, 1);
+  BitmapFont::drawText(blackTimeStr, OFFSET, h() - BOTTOM_MARGIN + 5, 1);
+  BitmapFont::drawText(whiteTimeStr, OFFSET, h() - BOTTOM_MARGIN + 25, 1);
 }
