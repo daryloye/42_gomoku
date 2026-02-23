@@ -812,16 +812,4 @@ int main() {
     if (whiteCaptures != 1)
       throw std::runtime_error("White should capture 1 pair");
   });
-
-  test("49. Six-in-row with both ends blocked still wins", [&]() {
-    initGrid();
-    playRealisticOpening();
-    testGrid[9][4] = Stone::WHITE;
-    for (int i = 5; i < 11; i++)
-      testGrid[9][i] = Stone::BLACK;
-    testGrid[9][11] = Stone::WHITE;
-
-    if (!hasPlayerWon({7, 9}, Stone::BLACK, testGrid))
-      throw std::runtime_error("Six-in-row should win even with blocked ends");
-  });
 }

@@ -239,17 +239,17 @@ int GomokuBoard::handle(int event) {
     int blackCapturedBefore = blackCaptured;
     int whiteCapturedBefore = whiteCaptured;
 
-    int capturedPairs = 0;
+    int capturedStones = 0;
     if (gameRules.capturesEnabled) {
-      capturedPairs = countCapturedPairs(cell, currentPlayer, grid);
+      capturedStones = countCapturedPairs(cell, currentPlayer, grid) * 2;
       if (currentPlayer == Stone::BLACK) {
-        blackCaptured += capturedPairs;
+        blackCaptured += capturedStones;
       } else {
-        whiteCaptured += capturedPairs;
+        whiteCaptured += capturedStones;
       }
     }
 
-    if (gameRules.capturesEnabled && capturedPairs > 0) {
+    if (gameRules.capturesEnabled && capturedStones > 0) {
       Stone opponent =
           (currentPlayer == Stone::BLACK) ? Stone::WHITE : Stone::BLACK;
       const int directions[4][2] = {{1, 0}, {0, 1}, {1, 1}, {1, -1}};
@@ -423,14 +423,14 @@ void GomokuBoard::makeAIMove() {
     int blackCapturedBefore = blackCaptured;
     int whiteCapturedBefore = whiteCaptured;
 
-    int capturedPairs = countCapturedPairs(aiResult.move, currentPlayer, grid);
+    int capturedStones = countCapturedPairs(aiResult.move, currentPlayer, grid) * 2;
     if (currentPlayer == Stone::BLACK) {
-      blackCaptured += capturedPairs;
+      blackCaptured += capturedStones;
     } else {
-      whiteCaptured += capturedPairs;
+      whiteCaptured += capturedStones;
     }
 
-    if (capturedPairs > 0) {
+    if (capturedStones > 0) {
       Stone opponent =
           (currentPlayer == Stone::BLACK) ? Stone::WHITE : Stone::BLACK;
       const int directions[4][2] = {{1, 0}, {0, 1}, {1, 1}, {1, -1}};
@@ -533,7 +533,7 @@ void GomokuBoard::makeAIMove() {
               << "): " << aiResult.move << " | Score: " << aiResult.score
               << " | Time: " << aiThinkTime
               << "ms | Nodes: " << totalNodesEvaluated << std::endl;
-    std::cout << "Captures: " << capturedPairs
+    std::cout << "Captures: " << capturedStones
               << " | Total - B:" << blackCaptured << " W:" << whiteCaptured
               << " | Moves - B:" << blackMoveCount << " W:" << whiteMoveCount
               << std::endl;
