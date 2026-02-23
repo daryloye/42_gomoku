@@ -52,32 +52,7 @@ void GomokuBoard::setStone(Coord cell, Stone stone) {
 }
 
 bool GomokuBoard::checkWin(Coord cell, Stone stone) const {
-  const int directions[4][2] = {{1, 0}, {0, 1}, {1, 1}, {1, -1}};
-
-  for (int d = 0; d < 4; d++) {
-    int dx = directions[d][0];
-    int dy = directions[d][1];
-    int count = 1;
-
-    for (int i = 1; i < 5; i++) {
-      Coord next = {cell.x + i * dx, cell.y + i * dy};
-      if (getStone(next) != stone)
-        break;
-      count++;
-    }
-
-    for (int i = 1; i < 5; i++) {
-      Coord next = {cell.x - i * dx, cell.y - i * dy};
-      if (getStone(next) != stone)
-        break;
-      count++;
-    }
-
-    if (count >= 5)
-      return true;
-  }
-
-  return false;
+  return hasPlayerWon(cell, stone, grid);
 }
 
 void GomokuBoard::analyzeDoubleThree(Coord move, Stone colour,
@@ -126,6 +101,40 @@ void GomokuBoard::analyzeDoubleThree(Coord move, Stone colour,
 
       if (totalCount == 3 && forwardOpen && backwardOpen)
         directions[d] = true;
+    }
+  }
+}
+
+void GomokuBoard::applyCaptures(Coord cell) {
+  Stone opponent = (currentPlayer == Stone::BLACK) ? Stone::WHITE : Stone::BLACK;
+  const int dirs[4][2] = {{1, 0}, {0, 1}, {1, 1}, {1, -1}};
+
+  for (const auto &dir : dirs) {
+    int dx = dir[0];
+    int dy = dir[1];
+
+    int py1 = cell.y + dy, px1 = cell.x + dx;
+    int py2 = cell.y + 2 * dy, px2 = cell.x + 2 * dx;
+    int py3 = cell.y + 3 * dy, px3 = cell.x + 3 * dx;
+    if (py1 >= 0 && py1 < BOARD_SIZE && px1 >= 0 && px1 < BOARD_SIZE &&
+        py2 >= 0 && py2 < BOARD_SIZE && px2 >= 0 && px2 < BOARD_SIZE &&
+        py3 >= 0 && py3 < BOARD_SIZE && px3 >= 0 && px3 < BOARD_SIZE &&
+        grid[py1][px1] == opponent && grid[py2][px2] == opponent &&
+        grid[py3][px3] == currentPlayer) {
+      grid[py1][px1] = Stone::EMPTY;
+      grid[py2][px2] = Stone::EMPTY;
+    }
+
+    int ny1 = cell.y - dy, nx1 = cell.x - dx;
+    int ny2 = cell.y - 2 * dy, nx2 = cell.x - 2 * dx;
+    int ny3 = cell.y - 3 * dy, nx3 = cell.x - 3 * dx;
+    if (ny1 >= 0 && ny1 < BOARD_SIZE && nx1 >= 0 && nx1 < BOARD_SIZE &&
+        ny2 >= 0 && ny2 < BOARD_SIZE && nx2 >= 0 && nx2 < BOARD_SIZE &&
+        ny3 >= 0 && ny3 < BOARD_SIZE && nx3 >= 0 && nx3 < BOARD_SIZE &&
+        grid[ny1][nx1] == opponent && grid[ny2][nx2] == opponent &&
+        grid[ny3][nx3] == currentPlayer) {
+      grid[ny1][nx1] = Stone::EMPTY;
+      grid[ny2][nx2] = Stone::EMPTY;
     }
   }
 }
@@ -249,40 +258,8 @@ int GomokuBoard::handle(int event) {
       }
     }
 
-    if (gameRules.capturesEnabled && capturedStones > 0) {
-      Stone opponent =
-          (currentPlayer == Stone::BLACK) ? Stone::WHITE : Stone::BLACK;
-      const int directions[4][2] = {{1, 0}, {0, 1}, {1, 1}, {1, -1}};
-
-      for (const auto &dir : directions) {
-        int dx = dir[0];
-        int dy = dir[1];
-
-        int py1 = cell.y + dy, px1 = cell.x + dx;
-        int py2 = cell.y + 2 * dy, px2 = cell.x + 2 * dx;
-        int py3 = cell.y + 3 * dy, px3 = cell.x + 3 * dx;
-        if (py1 >= 0 && py1 < BOARD_SIZE && px1 >= 0 && px1 < BOARD_SIZE &&
-            py2 >= 0 && py2 < BOARD_SIZE && px2 >= 0 && px2 < BOARD_SIZE &&
-            py3 >= 0 && py3 < BOARD_SIZE && px3 >= 0 && px3 < BOARD_SIZE &&
-            grid[py1][px1] == opponent && grid[py2][px2] == opponent &&
-            grid[py3][px3] == currentPlayer) {
-          grid[py1][px1] = Stone::EMPTY;
-          grid[py2][px2] = Stone::EMPTY;
-        }
-
-        int ny1 = cell.y - dy, nx1 = cell.x - dx;
-        int ny2 = cell.y - 2 * dy, nx2 = cell.x - 2 * dx;
-        int ny3 = cell.y - 3 * dy, nx3 = cell.x - 3 * dx;
-        if (ny1 >= 0 && ny1 < BOARD_SIZE && nx1 >= 0 && nx1 < BOARD_SIZE &&
-            ny2 >= 0 && ny2 < BOARD_SIZE && nx2 >= 0 && nx2 < BOARD_SIZE &&
-            ny3 >= 0 && ny3 < BOARD_SIZE && nx3 >= 0 && nx3 < BOARD_SIZE &&
-            grid[ny1][nx1] == opponent && grid[ny2][nx2] == opponent &&
-            grid[ny3][nx3] == currentPlayer) {
-          grid[ny1][nx1] = Stone::EMPTY;
-          grid[ny2][nx2] = Stone::EMPTY;
-        }
-      }
-    }
+    if (gameRules.capturesEnabled && capturedStones > 0)
+      applyCaptures(cell);
 
     bool hasFiveInRow = checkWin(cell, currentPlayer);
     bool opponentCanBreakFive = false;
@@ -301,11 +278,8 @@ int GomokuBoard::handle(int event) {
         (currentPlayer == Stone::BLACK) ? Stone::WHITE : Stone::BLACK;
     int opponentCaptured =
         (opponent == Stone::BLACK) ? blackCaptured : whiteCaptured;
-    bool opponentWinsByCaptureThreat = false;
-
-    if (hasFiveInRow && opponentCanBreakFive && opponentCaptured >= 8) {
-      opponentWinsByCaptureThreat = true;
-    }
+    bool opponentWinsByCaptureThreat =
+        hasFiveInRow && opponentCanBreakFive && opponentCaptured >= 8;
 
     if (winByAlignment || winByCapture) {
       winner = currentPlayer;
@@ -427,40 +401,8 @@ void GomokuBoard::makeAIMove() {
       whiteCaptured += capturedStones;
     }
 
-    if (capturedStones > 0) {
-      Stone opponent =
-          (currentPlayer == Stone::BLACK) ? Stone::WHITE : Stone::BLACK;
-      const int directions[4][2] = {{1, 0}, {0, 1}, {1, 1}, {1, -1}};
-
-      for (const auto &dir : directions) {
-        int dx = dir[0];
-        int dy = dir[1];
-
-        int py1 = aiResult.move.y + dy, px1 = aiResult.move.x + dx;
-        int py2 = aiResult.move.y + 2 * dy, px2 = aiResult.move.x + 2 * dx;
-        int py3 = aiResult.move.y + 3 * dy, px3 = aiResult.move.x + 3 * dx;
-        if (py1 >= 0 && py1 < BOARD_SIZE && px1 >= 0 && px1 < BOARD_SIZE &&
-            py2 >= 0 && py2 < BOARD_SIZE && px2 >= 0 && px2 < BOARD_SIZE &&
-            py3 >= 0 && py3 < BOARD_SIZE && px3 >= 0 && px3 < BOARD_SIZE &&
-            grid[py1][px1] == opponent && grid[py2][px2] == opponent &&
-            grid[py3][px3] == currentPlayer) {
-          grid[py1][px1] = Stone::EMPTY;
-          grid[py2][px2] = Stone::EMPTY;
-        }
-
-        int ny1 = aiResult.move.y - dy, nx1 = aiResult.move.x - dx;
-        int ny2 = aiResult.move.y - 2 * dy, nx2 = aiResult.move.x - 2 * dx;
-        int ny3 = aiResult.move.y - 3 * dy, nx3 = aiResult.move.x - 3 * dx;
-        if (ny1 >= 0 && ny1 < BOARD_SIZE && nx1 >= 0 && nx1 < BOARD_SIZE &&
-            ny2 >= 0 && ny2 < BOARD_SIZE && nx2 >= 0 && nx2 < BOARD_SIZE &&
-            ny3 >= 0 && ny3 < BOARD_SIZE && nx3 >= 0 && nx3 < BOARD_SIZE &&
-            grid[ny1][nx1] == opponent && grid[ny2][nx2] == opponent &&
-            grid[ny3][nx3] == currentPlayer) {
-          grid[ny1][nx1] = Stone::EMPTY;
-          grid[ny2][nx2] = Stone::EMPTY;
-        }
-      }
-    }
+    if (capturedStones > 0)
+      applyCaptures(aiResult.move);
 
     bool hasFiveInRow = checkWin(aiResult.move, currentPlayer);
     bool opponentCanBreakFive = false;
@@ -478,11 +420,8 @@ void GomokuBoard::makeAIMove() {
         (currentPlayer == Stone::BLACK) ? Stone::WHITE : Stone::BLACK;
     int opponentCaptured =
         (opponent == Stone::BLACK) ? blackCaptured : whiteCaptured;
-    bool opponentWinsByCaptureThreat = false;
-
-    if (hasFiveInRow && opponentCanBreakFive && opponentCaptured >= 8) {
-      opponentWinsByCaptureThreat = true;
-    }
+    bool opponentWinsByCaptureThreat =
+        hasFiveInRow && opponentCanBreakFive && opponentCaptured >= 8;
 
     if (winByAlignment || winByCapture) {
       winner = currentPlayer;

@@ -32,28 +32,19 @@ int count_x_in_a_row(Coord move, Stone colour, const Grid &grid) {
 }
 
 bool hasPlayerWon(Coord move, Stone colour, const Grid &grid) {
-  if (count_x_in_a_row(move, colour, grid) >= 5)
-    return true;
-
-  return false;
+  return count_x_in_a_row(move, colour, grid) >= 5;
 }
 
 bool isThreatDetected(Coord move, Stone colour, const Grid &grid) {
-  if (count_x_in_a_row(move, colour, grid) >= 3)
-    return true;
-
-  return false;
+  return count_x_in_a_row(move, colour, grid) >= 3;
 }
 
 bool isValidMove(Coord cell, const Grid &grid) {
   if (cell.x < 0 || cell.x >= BOARD_SIZE || cell.y < 0 || cell.y >= BOARD_SIZE)
     return false;
 
-  if (grid[cell.y][cell.x] == Stone::BLACK ||
-      grid[cell.y][cell.x] == Stone::WHITE)
-    return false;
-
-  return true;
+  return grid[cell.y][cell.x] != Stone::BLACK &&
+         grid[cell.y][cell.x] != Stone::WHITE;
 }
 
 int countCapturedPairs(Coord move, Stone colour, const Grid &grid) {
@@ -62,8 +53,6 @@ int countCapturedPairs(Coord move, Stone colour, const Grid &grid) {
 
   Stone opponent = (colour == Stone::BLACK) ? Stone::WHITE : Stone::BLACK;
   int capturedCount = 0;
-
-  const int directions[4][2] = {{1, 0}, {0, 1}, {1, 1}, {1, -1}};
 
   for (const auto &dir : directions) {
     int dx = dir[0];
@@ -108,12 +97,6 @@ bool createsDoubleThree(Coord move, Stone colour, const Grid &grid) {
     return false;
 
   int freeThreeCount = 0;
-  const int directions[4][2] = {
-      {1, 0}, // horizontal
-      {0, 1}, // vertical
-      {1, 1}, // diagonal down-right
-      {1, -1} // diagonal down-left
-  };
 
   for (const auto &dir : directions) {
     int dx = dir[0];
@@ -238,9 +221,7 @@ bool canOpponentBreakFiveByCapture(Coord move, Stone colour, const Grid &grid) {
   Stone opponent = (colour == Stone::BLACK) ? Stone::WHITE : Stone::BLACK;
 
   for (const Coord &pos : fivePositions) {
-    const int captureDirections[4][2] = {{1, 0}, {0, 1}, {1, 1}, {1, -1}};
-
-    for (const auto &dir : captureDirections) {
+    for (const auto &dir : directions) {
       int dx = dir[0];
       int dy = dir[1];
 

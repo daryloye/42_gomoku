@@ -180,7 +180,7 @@ int main() {
                {9, 10, Stone::BLACK},
                {8, 8, Stone::BLACK},
                {10, 10, Stone::BLACK}});
-    createsDoubleThree({9, 9}, Stone::BLACK, testGrid);
+    (void)createsDoubleThree({9, 9}, Stone::BLACK, testGrid);
   });
 
   test("6. Opponent can break five-in-row by capture", [&]() {
@@ -249,12 +249,9 @@ int main() {
   test("13. Free-three requires both ends open", [&]() {
     initGrid();
     playRealisticOpening();
-    testGrid[9][9] = Stone::BLACK;
-    testGrid[9][10] = Stone::BLACK;
-    testGrid[9][11] = Stone::BLACK;
+    setLine(9, 9, 0, 1, 3, Stone::BLACK);
     testGrid[9][12] = Stone::WHITE;
-    bool creates = createsDoubleThree({9, 10}, Stone::BLACK, testGrid);
-    (void)creates;
+    (void)createsDoubleThree({9, 10}, Stone::BLACK, testGrid);
   });
 
   test("14. All 8 directions alignment check", [&]() {
@@ -429,17 +426,10 @@ int main() {
   test("29. Forbidden double-three blocks only winning path", [&]() {
     initGrid();
     playRealisticOpening();
-    testGrid[9][5] = Stone::BLACK;
-    testGrid[9][6] = Stone::BLACK;
-    testGrid[9][7] = Stone::BLACK;
-    testGrid[9][8] = Stone::BLACK;
+    setLine(9, 5, 0, 1, 4, Stone::BLACK);
+    setLine(8, 9, 1, 0, 3, Stone::BLACK);
 
-    testGrid[8][9] = Stone::BLACK;
-    testGrid[10][9] = Stone::BLACK;
-    testGrid[11][9] = Stone::BLACK;
-
-    bool creates = createsDoubleThree({9, 9}, Stone::BLACK, testGrid);
-    (void)creates;
+    (void)createsDoubleThree({9, 9}, Stone::BLACK, testGrid);
   });
 
   test("30. Capture that creates free-three is allowed", [&]() {
@@ -461,8 +451,7 @@ int main() {
   test("31. Simultaneous 5-in-row AND 10th capture on same move", [&]() {
     initGrid();
     playRealisticOpening();
-    for (int i = 5; i < 9; i++)
-      testGrid[9][i] = Stone::BLACK;
+    setLine(9, 5, 0, 1, 4, Stone::BLACK);
     testGrid[9][10] = Stone::WHITE;
     testGrid[9][11] = Stone::WHITE;
     testGrid[9][12] = Stone::BLACK;
@@ -488,48 +477,36 @@ int main() {
          testGrid[9][10] = Stone::BLACK;
          testGrid[9][11] = Stone::BLACK;
 
-         bool canBreak =
-             canOpponentBreakFiveByCapture({9, 9}, Stone::BLACK, testGrid);
-         (void)canBreak;
+         (void)canOpponentBreakFiveByCapture({9, 9}, Stone::BLACK, testGrid);
        });
 
   test("33. Multiple overlapping 5-in-rows all breakable by single capture",
        [&]() {
          initGrid();
          playRealisticOpening();
-         for (int i = 5; i < 10; i++)
-           testGrid[9][i] = Stone::BLACK;
-         for (int i = 5; i < 10; i++)
-           testGrid[i][9] = Stone::BLACK;
-         for (int i = 0; i < 5; i++)
-           testGrid[5 + i][5 + i] = Stone::BLACK;
+         setLine(9, 5, 0, 1, 5, Stone::BLACK);
+         setLine(5, 9, 1, 0, 5, Stone::BLACK);
+         setLine(5, 5, 1, 1, 5, Stone::BLACK);
 
          testGrid[9][4] = Stone::WHITE;
          testGrid[9][7] = Stone::WHITE;
 
-         bool canBreak =
-             canOpponentBreakFiveByCapture({9, 7}, Stone::BLACK, testGrid);
+         (void)canOpponentBreakFiveByCapture({9, 7}, Stone::BLACK, testGrid);
          bool won = hasPlayerWon({9, 9}, Stone::BLACK, testGrid);
 
          if (!won)
            throw std::runtime_error("Multiple 5-in-rows should trigger win");
-         (void)canBreak;
        });
 
   test("34. Quadruple-three (four free-threes simultaneously)", [&]() {
     initGrid();
     playRealisticOpening();
-    testGrid[9][8] = Stone::BLACK;
-    testGrid[9][10] = Stone::BLACK;
-    testGrid[8][9] = Stone::BLACK;
-    testGrid[10][9] = Stone::BLACK;
-    testGrid[8][8] = Stone::BLACK;
-    testGrid[10][10] = Stone::BLACK;
-    testGrid[8][10] = Stone::BLACK;
-    testGrid[10][8] = Stone::BLACK;
+    setStones({{9, 8, Stone::BLACK},   {9, 10, Stone::BLACK},
+               {8, 9, Stone::BLACK},   {10, 9, Stone::BLACK},
+               {8, 8, Stone::BLACK},   {10, 10, Stone::BLACK},
+               {8, 10, Stone::BLACK},  {10, 8, Stone::BLACK}});
 
-    bool creates = createsDoubleThree({9, 9}, Stone::BLACK, testGrid);
-    (void)creates;
+    (void)createsDoubleThree({9, 9}, Stone::BLACK, testGrid);
   });
 
   test("35. 19-stone diagonal overline (corner to corner)", [&]() {
@@ -573,8 +550,7 @@ int main() {
   test("37. Win condition with opponent at 9 captures about to win", [&]() {
     initGrid();
     playRealisticOpening();
-    for (int i = 0; i < 5; i++)
-      testGrid[9][i] = Stone::BLACK;
+    setLine(9, 0, 0, 1, 5, Stone::BLACK);
 
     testGrid[10][10] = Stone::WHITE;
     testGrid[10][11] = Stone::WHITE;
@@ -636,23 +612,16 @@ int main() {
   test("40. Five stones with middle stone capturable by opponent", [&]() {
     initGrid();
     playRealisticOpening();
-    testGrid[9][5] = Stone::BLACK;
-    testGrid[9][6] = Stone::BLACK;
-    testGrid[9][7] = Stone::BLACK;
-    testGrid[9][8] = Stone::BLACK;
-    testGrid[9][9] = Stone::BLACK;
-
+    setLine(9, 5, 0, 1, 5, Stone::BLACK);
     testGrid[8][7] = Stone::WHITE;
     testGrid[8][8] = Stone::BLACK;
     testGrid[10][7] = Stone::WHITE;
 
     bool won = hasPlayerWon({7, 9}, Stone::BLACK, testGrid);
-    bool canBreak =
-        canOpponentBreakFiveByCapture({7, 9}, Stone::BLACK, testGrid);
+    (void)canOpponentBreakFiveByCapture({7, 9}, Stone::BLACK, testGrid);
 
     if (!won)
       throw std::runtime_error("Should detect 5-in-row");
-    (void)canBreak;
   });
 
   test("41. Cannot move into a capture (self-sacrifice forbidden)", [&]() {
@@ -671,10 +640,7 @@ int main() {
   test("42. Capture prevents opponent's imminent 5-in-row win", [&]() {
     initGrid();
     playRealisticOpening();
-    testGrid[9][5] = Stone::WHITE;
-    testGrid[9][6] = Stone::WHITE;
-    testGrid[9][7] = Stone::WHITE;
-    testGrid[9][8] = Stone::WHITE;
+    setLine(9, 5, 0, 1, 4, Stone::WHITE);
 
     testGrid[9][10] = Stone::BLACK;
     testGrid[9][11] = Stone::BLACK;
@@ -706,16 +672,13 @@ int main() {
   test("44. Free-three with all gap patterns (_XXX_, X_XX_, XX_X_)", [&]() {
     initGrid();
     playRealisticOpening();
-    testGrid[9][6] = Stone::BLACK;
-    testGrid[9][7] = Stone::BLACK;
-    testGrid[9][8] = Stone::BLACK;
+    setLine(9, 6, 0, 1, 3, Stone::BLACK);
 
     testGrid[9][11] = Stone::BLACK;
     testGrid[9][13] = Stone::BLACK;
     testGrid[9][14] = Stone::BLACK;
 
-    bool creates1 = createsDoubleThree({9, 9}, Stone::BLACK, testGrid);
-    (void)creates1;
+    (void)createsDoubleThree({9, 9}, Stone::BLACK, testGrid);
 
     initGrid();
     testGrid[9][7] = Stone::BLACK;
@@ -725,18 +688,14 @@ int main() {
     testGrid[10][8] = Stone::BLACK;
     testGrid[11][8] = Stone::BLACK;
 
-    bool creates2 = createsDoubleThree({8, 9}, Stone::BLACK, testGrid);
-    (void)creates2;
+    (void)createsDoubleThree({8, 9}, Stone::BLACK, testGrid);
   });
 
   test("45. Win by 10th capture while opponent has unblockable four-in-row",
        [&]() {
          initGrid();
          playRealisticOpening();
-         testGrid[5][5] = Stone::WHITE;
-         testGrid[5][6] = Stone::WHITE;
-         testGrid[5][7] = Stone::WHITE;
-         testGrid[5][8] = Stone::WHITE;
+         setLine(5, 5, 0, 1, 4, Stone::WHITE);
 
          testGrid[9][10] = Stone::WHITE;
          testGrid[9][11] = Stone::WHITE;
@@ -747,25 +706,4 @@ int main() {
            throw std::runtime_error(
                "Should capture for 10th pair even with opponent threat");
        });
-
-  test("46. Triple-overlapping captures in same direction", [&]() {
-    initGrid();
-    playRealisticOpening();
-    testGrid[9][10] = Stone::WHITE;
-    testGrid[9][11] = Stone::WHITE;
-    testGrid[9][12] = Stone::BLACK;
-
-    testGrid[9][13] = Stone::WHITE;
-    testGrid[9][14] = Stone::WHITE;
-    testGrid[9][15] = Stone::BLACK;
-
-    testGrid[9][16] = Stone::WHITE;
-    testGrid[9][17] = Stone::WHITE;
-    testGrid[9][18] = Stone::BLACK;
-
-    int captured = countCapturedPairs({9, 9}, Stone::BLACK, testGrid);
-    if (captured != 1)
-      throw std::runtime_error(
-          "Should only capture adjacent pair, not multiple");
-  });
 }

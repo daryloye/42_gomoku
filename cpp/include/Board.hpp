@@ -56,6 +56,7 @@ private:
   Stone getStone(Coord cell) const;
   void setStone(Coord cell, Stone p);
   bool checkWin(Coord cell, Stone stone) const;
+  void applyCaptures(Coord cell);
   void drawBoard();
   void drawUI();
   void drawModeButtons();

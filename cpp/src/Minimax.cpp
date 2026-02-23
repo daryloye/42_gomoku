@@ -108,7 +108,7 @@ bool Minimax::hasOccupiedNeighbour(Coord cell, const Grid &grid) {
 }
 
 std::vector<Coord> Minimax::getPossibleMoves(const Grid &grid) {
-  std::vector<Coord> ret = {};
+  std::vector<Coord> ret;
 
   for (int y = 0; y < BOARD_SIZE; y++) {
     for (int x = 0; x < BOARD_SIZE; x++) {
@@ -138,49 +138,15 @@ float Minimax::evaluateMove(const Grid &grid) {
     }
   }
 
-  float aiScore = 0;
-  switch (aiBest) {
-  case 0:
-    aiScore = 0;
-    break;
-  case 1:
-    aiScore = 1;
-    break;
-  case 2:
-    aiScore = 10;
-    break;
-  case 3:
-    aiScore = 100;
-    break;
-  case 4:
-    aiScore = 1000;
-    break;
-  default:
-    aiScore = 10000;
-    break;
-  }
+  auto toScore = [](int best) -> float {
+    static const float scores[] = {0, 1, 10, 100, 1000};
+    if (best < 0 || best > 4)
+      return 10000;
+    return scores[best];
+  };
 
-  float oppScore = 0;
-  switch (oppBest) {
-  case 0:
-    oppScore = 0;
-    break;
-  case 1:
-    oppScore = 1;
-    break;
-  case 2:
-    oppScore = 10;
-    break;
-  case 3:
-    oppScore = 100;
-    break;
-  case 4:
-    oppScore = 1000;
-    break;
-  default:
-    oppScore = 10000;
-    break;
-  }
+  float aiScore = toScore(aiBest);
+  float oppScore = toScore(oppBest);
 
   return (aiScore - 2 * oppScore);
 }
