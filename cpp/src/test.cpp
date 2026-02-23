@@ -768,23 +768,4 @@ int main() {
       throw std::runtime_error(
           "Should only capture adjacent pair, not multiple");
   });
-
-  test("47. Forbidden double-three but triple-three is created", [&]() {
-    initGrid();
-    playRealisticOpening();
-    testGrid[9][8] = Stone::BLACK;
-    testGrid[9][10] = Stone::BLACK;
-
-    testGrid[8][9] = Stone::BLACK;
-    testGrid[10][9] = Stone::BLACK;
-
-    testGrid[8][8] = Stone::BLACK;
-    testGrid[10][10] = Stone::BLACK;
-
-    testGrid[7][9] = Stone::BLACK;
-    testGrid[11][9] = Stone::BLACK;
-
-    bool creates = createsDoubleThree({9, 9}, Stone::BLACK, testGrid);
-    (void)creates;
-  });
 }
