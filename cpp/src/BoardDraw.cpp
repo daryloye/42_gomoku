@@ -1,7 +1,6 @@
 #include "Gomoku.hpp"
 
 void GomokuBoard::draw() {
-  // https://www.fltk.org/doc-1.4/drawing.html#fl_rectf
   fl_rectf(0, 0, w(), h(), 220, 200, 150);
 
   drawBoard();
@@ -10,9 +9,7 @@ void GomokuBoard::draw() {
 }
 
 void GomokuBoard::drawBoard() {
-  // https://www.fltk.org/doc-1.4/group__fl__attributes.html#ga1927b6ff6e07c65d5efd79c8cb32c8e1
   fl_color(60, 60, 60);
-  // https://www.fltk.org/doc-1.4/group__fl__attributes.html#ga3bc05e2b989b509a932bce40a6bc42f5
   fl_line_style(FL_SOLID, 2);
 
   int boardYOffset = TEXT_MARGIN;

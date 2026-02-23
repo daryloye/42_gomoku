@@ -150,8 +150,6 @@ bool wouldMoveIntoCapture(Coord cell, Stone colour, const Grid &grid) {
     int dx = dir[0];
     int dy = dir[1];
 
-    // Case A: new stone is the near stone of the pair
-    // pattern: [opp @ -1][new @ 0][curr @ +1][opp @ +2]
     {
       Coord b1 = {cell.x - dx, cell.y - dy};
       Coord f1 = {cell.x + dx, cell.y + dy};
@@ -162,8 +160,6 @@ bool wouldMoveIntoCapture(Coord cell, Stone colour, const Grid &grid) {
         return true;
     }
 
-    // Case B: new stone is the far stone of the pair
-    // pattern: [opp @ -2][curr @ -1][new @ 0][opp @ +1]
     {
       Coord b2 = {cell.x - 2 * dx, cell.y - 2 * dy};
       Coord b1 = {cell.x - dx, cell.y - dy};
@@ -225,43 +221,23 @@ bool canOpponentBreakFiveByCapture(Coord move, Stone colour, const Grid &grid) {
       int dx = dir[0];
       int dy = dir[1];
 
-      int playX1 = pos.x - 3 * dx;
-      int playY1 = pos.y - 3 * dy;
-      int midX1 = pos.x - 2 * dx;
-      int midY1 = pos.y - 2 * dy;
-      int nextX1 = pos.x - dx;
-      int nextY1 = pos.y - dy;
+      Coord far = {pos.x + dx, pos.y + dy};
+      Coord outer = {pos.x + 2 * dx, pos.y + 2 * dy};
+      Coord flank = {pos.x - dx, pos.y - dy};
 
-      if (playX1 >= 0 && playX1 < BOARD_SIZE && playY1 >= 0 &&
-          playY1 < BOARD_SIZE && midX1 >= 0 && midX1 < BOARD_SIZE &&
-          midY1 >= 0 && midY1 < BOARD_SIZE && nextX1 >= 0 &&
-          nextX1 < BOARD_SIZE && nextY1 >= 0 && nextY1 < BOARD_SIZE) {
+      if (!isInBounds(far) || grid[far.y][far.x] != colour)
+        continue;
 
-        if (grid[playY1][playX1] == Stone::EMPTY &&
-            grid[midY1][midX1] == colour && grid[nextY1][nextX1] == colour &&
-            grid[playY1 + 3 * dy][playX1 + 3 * dx] == opponent) {
-          return true;
-        }
-      }
+      if (!isInBounds(flank) || !isInBounds(outer))
+        continue;
 
-      int playX2 = pos.x + 3 * dx;
-      int playY2 = pos.y + 3 * dy;
-      int midX2 = pos.x + 2 * dx;
-      int midY2 = pos.y + 2 * dy;
-      int nextX2 = pos.x + dx;
-      int nextY2 = pos.y + dy;
+      if (grid[flank.y][flank.x] == opponent &&
+          grid[outer.y][outer.x] == Stone::EMPTY)
+        return true;
 
-      if (playX2 >= 0 && playX2 < BOARD_SIZE && playY2 >= 0 &&
-          playY2 < BOARD_SIZE && midX2 >= 0 && midX2 < BOARD_SIZE &&
-          midY2 >= 0 && midY2 < BOARD_SIZE && nextX2 >= 0 &&
-          nextX2 < BOARD_SIZE && nextY2 >= 0 && nextY2 < BOARD_SIZE) {
-
-        if (grid[playY2][playX2] == Stone::EMPTY &&
-            grid[midY2][midX2] == colour && grid[nextY2][nextX2] == colour &&
-            grid[playY2 - 3 * dy][playX2 - 3 * dx] == opponent) {
-          return true;
-        }
-      }
+      if (grid[flank.y][flank.x] == Stone::EMPTY &&
+          grid[outer.y][outer.x] == opponent)
+        return true;
     }
   }
 

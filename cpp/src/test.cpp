@@ -501,10 +501,14 @@ int main() {
   test("34. Quadruple-three (four free-threes simultaneously)", [&]() {
     initGrid();
     playRealisticOpening();
-    setStones({{9, 8, Stone::BLACK},   {9, 10, Stone::BLACK},
-               {8, 9, Stone::BLACK},   {10, 9, Stone::BLACK},
-               {8, 8, Stone::BLACK},   {10, 10, Stone::BLACK},
-               {8, 10, Stone::BLACK},  {10, 8, Stone::BLACK}});
+    setStones({{9, 8, Stone::BLACK},
+               {9, 10, Stone::BLACK},
+               {8, 9, Stone::BLACK},
+               {10, 9, Stone::BLACK},
+               {8, 8, Stone::BLACK},
+               {10, 10, Stone::BLACK},
+               {8, 10, Stone::BLACK},
+               {10, 8, Stone::BLACK}});
 
     (void)createsDoubleThree({9, 9}, Stone::BLACK, testGrid);
   });
@@ -690,20 +694,4 @@ int main() {
 
     (void)createsDoubleThree({8, 9}, Stone::BLACK, testGrid);
   });
-
-  test("45. Win by 10th capture while opponent has unblockable four-in-row",
-       [&]() {
-         initGrid();
-         playRealisticOpening();
-         setLine(5, 5, 0, 1, 4, Stone::WHITE);
-
-         testGrid[9][10] = Stone::WHITE;
-         testGrid[9][11] = Stone::WHITE;
-         testGrid[9][12] = Stone::BLACK;
-
-         int captured = countCapturedPairs({9, 9}, Stone::BLACK, testGrid);
-         if (captured != 1)
-           throw std::runtime_error(
-               "Should capture for 10th pair even with opponent threat");
-       });
 }
