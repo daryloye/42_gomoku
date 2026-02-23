@@ -28,12 +28,6 @@ int main(int argc, char* argv[])
 		signal(SIGTERM, signal_handler);
 
 		g_board = new GomokuBoard();
-		if (!g_board)
-    {
-			std::cerr << "Error: Failed to allocate memory for game board" << std::endl;
-			return 1;
-		}
-
 		g_board->show(argc, argv);
 		Fl::run();
 		deleteBoard();
