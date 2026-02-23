@@ -212,6 +212,14 @@ int GomokuBoard::handle(int event) {
       return 1;
     }
 
+    if (gameRules.capturesEnabled &&
+        wouldMoveIntoCapture(cell, currentPlayer, grid)) {
+      illegalMoveCell = cell;
+      hasIllegalMove = true;
+      redraw();
+      return 1;
+    }
+
     setStone(previousOutlineCell, Stone::EMPTY);
     previousOutlineCell = {-1, -1};
     hasIllegalMove = false;

@@ -63,18 +63,12 @@ int countCapturedPairs(Coord move, Stone colour, const Grid &grid) {
   Stone opponent = (colour == Stone::BLACK) ? Stone::WHITE : Stone::BLACK;
   int capturedCount = 0;
 
-  const int directions[4][2] = {
-      {1, 0}, // horizontal
-      {0, 1}, // vertical
-      {1, 1}, // diagonal down-right
-      {1, -1} // diagonal down-left
-  };
+  const int directions[4][2] = {{1, 0}, {0, 1}, {1, 1}, {1, -1}};
 
   for (const auto &dir : directions) {
     int dx = dir[0];
     int dy = dir[1];
 
-    // Check forward direction
     int py1 = move.y + dy, px1 = move.x + dx;
     int py2 = move.y + 2 * dy, px2 = move.x + 2 * dx;
     int py3 = move.y + 3 * dy, px3 = move.x + 3 * dx;
@@ -88,7 +82,6 @@ int countCapturedPairs(Coord move, Stone colour, const Grid &grid) {
       }
     }
 
-    // Check backward direction
     int ny1 = move.y - dy, nx1 = move.x - dx;
     int ny2 = move.y - 2 * dy, nx2 = move.x - 2 * dx;
     int ny3 = move.y - 3 * dy, nx3 = move.x - 3 * dx;
@@ -164,6 +157,42 @@ bool createsDoubleThree(Coord move, Stone colour, const Grid &grid) {
   }
 
   return freeThreeCount >= 2;
+}
+
+bool wouldMoveIntoCapture(Coord cell, Stone colour, const Grid &grid) {
+  Stone opponent = (colour == Stone::BLACK) ? Stone::WHITE : Stone::BLACK;
+  const int dirs[4][2] = {{1, 0}, {0, 1}, {1, 1}, {1, -1}};
+
+  for (const auto &dir : dirs) {
+    int dx = dir[0];
+    int dy = dir[1];
+
+    // Case A: new stone is the near stone of the pair
+    // pattern: [opp @ -1][new @ 0][curr @ +1][opp @ +2]
+    {
+      Coord b1 = {cell.x - dx, cell.y - dy};
+      Coord f1 = {cell.x + dx, cell.y + dy};
+      Coord f2 = {cell.x + 2 * dx, cell.y + 2 * dy};
+      if (isInBounds(b1) && isInBounds(f1) && isInBounds(f2) &&
+          grid[b1.y][b1.x] == opponent && grid[f1.y][f1.x] == colour &&
+          grid[f2.y][f2.x] == opponent)
+        return true;
+    }
+
+    // Case B: new stone is the far stone of the pair
+    // pattern: [opp @ -2][curr @ -1][new @ 0][opp @ +1]
+    {
+      Coord b2 = {cell.x - 2 * dx, cell.y - 2 * dy};
+      Coord b1 = {cell.x - dx, cell.y - dy};
+      Coord f1 = {cell.x + dx, cell.y + dy};
+      if (isInBounds(b2) && isInBounds(b1) && isInBounds(f1) &&
+          grid[b2.y][b2.x] == opponent && grid[b1.y][b1.x] == colour &&
+          grid[f1.y][f1.x] == opponent)
+        return true;
+    }
+  }
+
+  return false;
 }
 
 std::vector<Coord> getFiveInARowPositions(Coord move, Stone colour,

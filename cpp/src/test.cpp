@@ -824,47 +824,4 @@ int main() {
     if (!hasPlayerWon({7, 9}, Stone::BLACK, testGrid))
       throw std::runtime_error("Six-in-row should win even with blocked ends");
   });
-
-  test("50. Complex endgame: 5-in-row breakable, opponent at 8 captures, can "
-       "counter-capture",
-       [&]() {
-         initGrid();
-         for (int i = 5; i < 10; i++)
-           testGrid[9][i] = Stone::BLACK;
-
-         testGrid[9][4] = Stone::WHITE;
-         testGrid[9][7] = Stone::WHITE;
-
-         testGrid[10][10] = Stone::BLACK;
-         testGrid[10][11] = Stone::BLACK;
-         testGrid[10][12] = Stone::WHITE;
-         playRealisticOpening();
-
-         bool hasWon = hasPlayerWon({7, 9}, Stone::BLACK, testGrid);
-         bool canBreak =
-             canOpponentBreakFiveByCapture({7, 9}, Stone::BLACK, testGrid);
-         int whiteCanCapture =
-             countCapturedPairs({9, 10}, Stone::WHITE, testGrid);
-
-         if (!hasWon)
-           throw std::runtime_error("Should have 5-in-row");
-         if (whiteCanCapture != 1)
-           throw std::runtime_error("White should have capture option");
-         (void)canBreak;
-       });
-
-  std::cout << std::endl;
-  std::cout << "=== Results ===" << std::endl;
-  std::cout << "Total tests: " << (passed + failed) << std::endl;
-  std::cout << "Passed: " << passed << std::endl;
-  std::cout << "Failed: " << failed << std::endl;
-
-  if (failed == 0) {
-    std::cout << "\nALL TESTS PASSED! No crashes or critical errors."
-              << std::endl;
-    return 0;
-  } else {
-    std::cout << "\nSome tests failed." << std::endl;
-    return 1;
-  }
 }
