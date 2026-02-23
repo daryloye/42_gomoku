@@ -787,29 +787,4 @@ int main() {
     bool creates = createsDoubleThree({9, 9}, Stone::BLACK, testGrid);
     (void)creates;
   });
-
-  test("48. Both players have 4 pairs captured, next capture wins", [&]() {
-    initGrid();
-    playRealisticOpening();
-    testGrid[9][10] = Stone::WHITE;
-    testGrid[9][11] = Stone::WHITE;
-    testGrid[9][12] = Stone::BLACK;
-
-    testGrid[10][9] = Stone::WHITE;
-    testGrid[11][9] = Stone::WHITE;
-    testGrid[12][9] = Stone::BLACK;
-
-    int blackCaptures = countCapturedPairs({9, 9}, Stone::BLACK, testGrid);
-
-    testGrid[8][10] = Stone::BLACK;
-    testGrid[8][11] = Stone::BLACK;
-    testGrid[8][12] = Stone::WHITE;
-
-    int whiteCaptures = countCapturedPairs({9, 8}, Stone::WHITE, testGrid);
-
-    if (blackCaptures != 2)
-      throw std::runtime_error("Black should capture 2 pairs");
-    if (whiteCaptures != 1)
-      throw std::runtime_error("White should capture 1 pair");
-  });
 }

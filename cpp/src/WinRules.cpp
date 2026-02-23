@@ -276,7 +276,7 @@ bool canOpponentBreakFiveByCapture(Coord move, Stone colour, const Grid &grid) {
           nextX2 < BOARD_SIZE && nextY2 >= 0 && nextY2 < BOARD_SIZE) {
 
         if (grid[playY2][playX2] == Stone::EMPTY &&
-            grid[midY2][midX2] == colour && grid[nextY2][nextY2] == colour &&
+            grid[midY2][midX2] == colour && grid[nextY2][nextX2] == colour &&
             grid[playY2 - 3 * dy][playX2 - 3 * dx] == opponent) {
           return true;
         }
