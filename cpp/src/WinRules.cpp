@@ -2,6 +2,7 @@
 
 static const int directions[4][2] = {{1, 0}, {0, 1}, {1, 1}, {1, -1}};
 
+// All these functions can be used in minimax.cpp
 static Stone opponentOf(Stone colour) {
   return (colour == Stone::BLACK) ? Stone::WHITE : Stone::BLACK;
 }
@@ -246,8 +247,7 @@ bool canOpponentBreakFiveByCapture(Coord move, Stone colour, const Grid &grid) {
       tmpGrid[far.y][far.x] = Stone::EMPTY;
 
       bool fiveStillExists = std::any_of(
-          fivePositions.begin(), fivePositions.end(),
-          [&](const Coord &check) {
+          fivePositions.begin(), fivePositions.end(), [&](const Coord &check) {
             return check != pos && check != far &&
                    hasPlayerWon(check, colour, tmpGrid);
           });

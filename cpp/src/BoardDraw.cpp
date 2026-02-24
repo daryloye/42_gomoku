@@ -350,7 +350,7 @@ void GomokuBoard::drawUI() {
     modeText = "Mode: AI vs Human";
     break;
   }
-  BitmapFont::drawText(modeText, OFFSET + 450, 12, 2);
+  BitmapFont::drawText(modeText, OFFSET + 500, 12, 2);
 
   char moveCountStr[40];
   int totalMoves = blackMoveCount + whiteMoveCount;
@@ -372,4 +372,10 @@ void GomokuBoard::drawUI() {
 
   BitmapFont::drawText(blackTimeStr, OFFSET, h() - BOTTOM_MARGIN + 5, 1);
   BitmapFont::drawText(whiteTimeStr, OFFSET, h() - BOTTOM_MARGIN + 25, 1);
+
+  if (gameMode == GameMode::AI_VS_HUMAN) {
+    char aiTimeStr[60];
+    snprintf(aiTimeStr, sizeof(aiTimeStr), "AI think time: %.0fms", aiThinkTime);
+    BitmapFont::drawText(aiTimeStr, OFFSET, h() - BOTTOM_MARGIN + 45, 1);
+  }
 }

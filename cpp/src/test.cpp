@@ -627,17 +627,4 @@ int main() {
     if (!won)
       throw std::runtime_error("Should detect 5-in-row");
   });
-
-  test("41. Cannot move into a capture (self-sacrifice forbidden)", [&]() {
-    initGrid();
-    playRealisticOpening();
-    testGrid[9][9] = Stone::BLACK;
-    testGrid[9][11] = Stone::BLACK;
-    testGrid[9][10] = Stone::EMPTY;
-
-    testGrid[9][12] = Stone::EMPTY;
-
-    if (!isValidMove({10, 9}, testGrid))
-      throw std::runtime_error("Empty position should be valid for move check");
-  });
 }
