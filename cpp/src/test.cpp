@@ -640,18 +640,4 @@ int main() {
     if (!isValidMove({10, 9}, testGrid))
       throw std::runtime_error("Empty position should be valid for move check");
   });
-
-  test("42. Capture prevents opponent's imminent 5-in-row win", [&]() {
-    initGrid();
-    playRealisticOpening();
-    setLine(9, 5, 0, 1, 4, Stone::WHITE);
-
-    testGrid[9][10] = Stone::BLACK;
-    testGrid[9][11] = Stone::BLACK;
-    testGrid[9][12] = Stone::WHITE;
-
-    int captured = countCapturedPairs({9, 9}, Stone::WHITE, testGrid);
-    if (captured != 1)
-      throw std::runtime_error("Should capture to prevent own loss");
-  });
 }

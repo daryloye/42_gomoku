@@ -244,9 +244,6 @@ int GomokuBoard::handle(int event) {
     else
       whiteMoveCount++;
 
-    setStone(cell, currentPlayer);
-    lastMove = cell;
-
     int blackCapturedBefore = blackCaptured;
     int whiteCapturedBefore = whiteCaptured;
 
@@ -259,6 +256,9 @@ int GomokuBoard::handle(int event) {
         whiteCaptured += capturedStones;
       }
     }
+
+    setStone(cell, currentPlayer);
+    lastMove = cell;
 
     if (gameRules.capturesEnabled && capturedStones > 0)
       applyCaptures(cell);
@@ -382,9 +382,6 @@ void GomokuBoard::makeAIMove() {
     lastEvaluationHeatmap = m.getEvaluationHeatmap();
     heatmapNeedsRedraw = true;
 
-    setStone(aiResult.move, currentPlayer);
-    this->lastMove = aiResult.move;
-
     if (currentPlayer == Stone::BLACK) {
       blackMoveCount++;
     } else {
@@ -402,6 +399,9 @@ void GomokuBoard::makeAIMove() {
     } else {
       whiteCaptured += capturedStones;
     }
+
+    setStone(aiResult.move, currentPlayer);
+    this->lastMove = aiResult.move;
 
     if (capturedStones > 0)
       applyCaptures(aiResult.move);
