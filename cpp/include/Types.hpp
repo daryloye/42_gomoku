@@ -26,6 +26,8 @@ struct GameRules {
 struct Coord {
   int x;
   int y;
+  bool operator==(const Coord &o) const { return x == o.x && y == o.y; }
+  bool operator!=(const Coord &o) const { return !(*this == o); }
 };
 
 typedef std::array<std::array<int, BOARD_SIZE>, BOARD_SIZE> CountGrid;

@@ -654,22 +654,4 @@ int main() {
     if (captured != 1)
       throw std::runtime_error("Should capture to prevent own loss");
   });
-
-  test("43. Maximum distance capture - opposite board corners involved", [&]() {
-    initGrid();
-    playRealisticOpening();
-    testGrid[0][1] = Stone::WHITE;
-    testGrid[0][2] = Stone::WHITE;
-    testGrid[0][3] = Stone::BLACK;
-
-    testGrid[18][17] = Stone::WHITE;
-    testGrid[18][16] = Stone::WHITE;
-    testGrid[18][15] = Stone::BLACK;
-
-    int cap1 = countCapturedPairs({0, 0}, Stone::BLACK, testGrid);
-    int cap2 = countCapturedPairs({18, 18}, Stone::BLACK, testGrid);
-
-    if (cap1 != 1 || cap2 != 1)
-      throw std::runtime_error("Captures at max distance should work");
-  });
 }

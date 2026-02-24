@@ -2,6 +2,10 @@
 
 static const int directions[4][2] = {{1, 0}, {0, 1}, {1, 1}, {1, -1}};
 
+static Stone opponentOf(Stone colour) {
+  return (colour == Stone::BLACK) ? Stone::WHITE : Stone::BLACK;
+}
+
 int count_x_in_a_row(Coord move, Stone colour, const Grid &grid) {
   int best = 1;
 
@@ -51,7 +55,7 @@ int countCapturedPairs(Coord move, Stone colour, const Grid &grid) {
   if (!isValidMove(move, grid))
     return 0;
 
-  Stone opponent = (colour == Stone::BLACK) ? Stone::WHITE : Stone::BLACK;
+  Stone opponent = opponentOf(colour);
   int capturedCount = 0;
 
   for (const auto &dir : directions) {
@@ -143,10 +147,9 @@ bool createsDoubleThree(Coord move, Stone colour, const Grid &grid) {
 }
 
 bool wouldMoveIntoCapture(Coord cell, Stone colour, const Grid &grid) {
-  Stone opponent = (colour == Stone::BLACK) ? Stone::WHITE : Stone::BLACK;
-  const int dirs[4][2] = {{1, 0}, {0, 1}, {1, 1}, {1, -1}};
+  Stone opponent = opponentOf(colour);
 
-  for (const auto &dir : dirs) {
+  for (const auto &dir : directions) {
     int dx = dir[0];
     int dy = dir[1];
 
@@ -214,7 +217,7 @@ bool canOpponentBreakFiveByCapture(Coord move, Stone colour, const Grid &grid) {
     return false;
   }
 
-  Stone opponent = (colour == Stone::BLACK) ? Stone::WHITE : Stone::BLACK;
+  Stone opponent = opponentOf(colour);
 
   for (const Coord &pos : fivePositions) {
     for (const auto &dir : directions) {
@@ -242,16 +245,12 @@ bool canOpponentBreakFiveByCapture(Coord move, Stone colour, const Grid &grid) {
       tmpGrid[pos.y][pos.x] = Stone::EMPTY;
       tmpGrid[far.y][far.x] = Stone::EMPTY;
 
-      bool fiveStillExists = false;
-      for (const Coord &check : fivePositions) {
-        if ((check.x == pos.x && check.y == pos.y) ||
-            (check.x == far.x && check.y == far.y))
-          continue;
-        if (hasPlayerWon(check, colour, tmpGrid)) {
-          fiveStillExists = true;
-          break;
-        }
-      }
+      bool fiveStillExists = std::any_of(
+          fivePositions.begin(), fivePositions.end(),
+          [&](const Coord &check) {
+            return check != pos && check != far &&
+                   hasPlayerWon(check, colour, tmpGrid);
+          });
 
       if (!fiveStillExists)
         return true;
