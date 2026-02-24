@@ -213,12 +213,16 @@ int GomokuBoard::handle(int event) {
 
     if (gameRules.doubleThreeEnabled &&
         createsDoubleThree(cell, currentPlayer, grid)) {
-      illegalMoveCell = cell;
-      hasIllegalMove = true;
-      illegalDirections = {false, false, false, false};
-      analyzeDoubleThree(cell, currentPlayer, illegalDirections);
-      redraw();
-      return 1;
+      bool capturesAPair = gameRules.capturesEnabled &&
+                           countCapturedPairs(cell, currentPlayer, grid) > 0;
+      if (!capturesAPair) {
+        illegalMoveCell = cell;
+        hasIllegalMove = true;
+        illegalDirections = {false, false, false, false};
+        analyzeDoubleThree(cell, currentPlayer, illegalDirections);
+        redraw();
+        return 1;
+      }
     }
 
     if (gameRules.capturesEnabled &&
