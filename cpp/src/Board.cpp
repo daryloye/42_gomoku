@@ -369,7 +369,6 @@ void GomokuBoard::makeAIMove() {
         (currentPlayer == Stone::BLACK) ? Stone::WHITE : Stone::BLACK;
 
     Minimax m(currentPlayer, opponentColor);
-    Coord lastMove = {-1, -1};
 
     MinimaxResult aiResult =
         m.minimax(grid, lastMove, 10, currentPlayer, opponentColor);
@@ -538,7 +537,6 @@ void GomokuBoard::updateSuggestion() {
     Stone opponent =
         (currentPlayer == Stone::BLACK) ? Stone::WHITE : Stone::BLACK;
     Minimax m(currentPlayer, opponent);
-    Coord lastMove = {-1, -1};
     suggestedMove = m.minimax(grid, lastMove, 10, currentPlayer, opponent);
     suggestionForPlayer = currentPlayer;
   } catch (const std::bad_alloc &e) {
