@@ -211,18 +211,16 @@ int GomokuBoard::handle(int event) {
       return 1;
     }
 
-    if (gameRules.doubleThreeEnabled &&
+    bool capturesAPair = gameRules.capturesEnabled &&
+                         countCapturedPairs(cell, currentPlayer, grid) > 0;
+    if (gameRules.doubleThreeEnabled && !capturesAPair &&
         createsDoubleThree(cell, currentPlayer, grid)) {
-      bool capturesAPair = gameRules.capturesEnabled &&
-                           countCapturedPairs(cell, currentPlayer, grid) > 0;
-      if (!capturesAPair) {
-        illegalMoveCell = cell;
-        hasIllegalMove = true;
-        illegalDirections = {false, false, false, false};
-        analyzeDoubleThree(cell, currentPlayer, illegalDirections);
-        redraw();
-        return 1;
-      }
+      illegalMoveCell = cell;
+      hasIllegalMove = true;
+      illegalDirections = {false, false, false, false};
+      analyzeDoubleThree(cell, currentPlayer, illegalDirections);
+      redraw();
+      return 1;
     }
 
     if (gameRules.capturesEnabled &&
