@@ -231,12 +231,29 @@ bool canOpponentBreakFiveByCapture(Coord move, Stone colour, const Grid &grid) {
       if (!isInBounds(flank) || !isInBounds(outer))
         continue;
 
-      if (grid[flank.y][flank.x] == opponent &&
-          grid[outer.y][outer.x] == Stone::EMPTY)
-        return true;
+      bool canCapture = (grid[flank.y][flank.x] == opponent &&
+                         grid[outer.y][outer.x] == Stone::EMPTY) ||
+                        (grid[flank.y][flank.x] == Stone::EMPTY &&
+                         grid[outer.y][outer.x] == opponent);
 
-      if (grid[flank.y][flank.x] == Stone::EMPTY &&
-          grid[outer.y][outer.x] == opponent)
+      if (!canCapture)
+        continue;
+      Grid tmpGrid = grid;
+      tmpGrid[pos.y][pos.x] = Stone::EMPTY;
+      tmpGrid[far.y][far.x] = Stone::EMPTY;
+
+      bool fiveStillExists = false;
+      for (const Coord &check : fivePositions) {
+        if ((check.x == pos.x && check.y == pos.y) ||
+            (check.x == far.x && check.y == far.y))
+          continue;
+        if (hasPlayerWon(check, colour, tmpGrid)) {
+          fiveStillExists = true;
+          break;
+        }
+      }
+
+      if (!fiveStillExists)
         return true;
     }
   }

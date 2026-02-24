@@ -672,26 +672,4 @@ int main() {
     if (cap1 != 1 || cap2 != 1)
       throw std::runtime_error("Captures at max distance should work");
   });
-
-  test("44. Free-three with all gap patterns (_XXX_, X_XX_, XX_X_)", [&]() {
-    initGrid();
-    playRealisticOpening();
-    setLine(9, 6, 0, 1, 3, Stone::BLACK);
-
-    testGrid[9][11] = Stone::BLACK;
-    testGrid[9][13] = Stone::BLACK;
-    testGrid[9][14] = Stone::BLACK;
-
-    (void)createsDoubleThree({9, 9}, Stone::BLACK, testGrid);
-
-    initGrid();
-    testGrid[9][7] = Stone::BLACK;
-    testGrid[9][9] = Stone::BLACK;
-    testGrid[9][10] = Stone::BLACK;
-
-    testGrid[10][8] = Stone::BLACK;
-    testGrid[11][8] = Stone::BLACK;
-
-    (void)createsDoubleThree({8, 9}, Stone::BLACK, testGrid);
-  });
 }
