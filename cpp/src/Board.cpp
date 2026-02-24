@@ -139,6 +139,52 @@ void GomokuBoard::applyCaptures(Coord cell) {
   }
 }
 
+void GomokuBoard::commitMove(Coord cell) {
+  Stone mover = currentPlayer;
+  Stone opponent = (mover == Stone::BLACK) ? Stone::WHITE : Stone::BLACK;
+
+  int blackCapturedBefore = blackCaptured;
+  int whiteCapturedBefore = whiteCaptured;
+
+  if (gameRules.capturesEnabled) {
+    int capturedStones = countCapturedPairs(cell, mover, grid) * 2;
+    if (mover == Stone::BLACK)
+      blackCaptured += capturedStones;
+    else
+      whiteCaptured += capturedStones;
+  }
+
+  setStone(cell, mover);
+  lastMove = cell;
+
+  if (gameRules.capturesEnabled)
+    applyCaptures(cell);
+
+  bool hasFiveInRow = checkWin(cell, mover);
+  bool opponentCanBreakFive =
+      hasFiveInRow && canOpponentBreakFiveByCapture(cell, mover, grid);
+
+  bool winByAlignment = hasFiveInRow && !opponentCanBreakFive;
+  bool winByCapture =
+      (mover == Stone::BLACK) ? (blackCaptured >= 10) : (whiteCaptured >= 10);
+
+  int opponentCaptured = (opponent == Stone::BLACK) ? blackCaptured : whiteCaptured;
+  bool opponentWinsByCaptureThreat =
+      hasFiveInRow && opponentCanBreakFive && opponentCaptured >= 8;
+
+  if (winByAlignment || winByCapture) {
+    winner = mover;
+    if (winByAlignment)
+      winningLine = getFiveInARowPositions(cell, mover, grid);
+  } else if (opponentWinsByCaptureThreat) {
+    winner = opponent;
+  } else {
+    currentPlayer = opponent;
+  }
+
+  recordMoveToHistory(cell, mover, blackCapturedBefore, whiteCapturedBefore);
+}
+
 int GomokuBoard::handle(int event) {
   if (event == FL_PUSH && Fl::event_button() == FL_LEFT_MOUSE) {
     if (clickedModeButton(Fl::event_x(), Fl::event_y())) {
@@ -244,60 +290,12 @@ int GomokuBoard::handle(int event) {
     else
       whiteMoveCount++;
 
-    int blackCapturedBefore = blackCaptured;
-    int whiteCapturedBefore = whiteCaptured;
+    commitMove(cell);
 
-    int capturedStones = 0;
-    if (gameRules.capturesEnabled) {
-      capturedStones = countCapturedPairs(cell, currentPlayer, grid) * 2;
-      if (currentPlayer == Stone::BLACK) {
-        blackCaptured += capturedStones;
-      } else {
-        whiteCaptured += capturedStones;
-      }
-    }
-
-    setStone(cell, currentPlayer);
-    lastMove = cell;
-
-    if (gameRules.capturesEnabled && capturedStones > 0)
-      applyCaptures(cell);
-
-    bool hasFiveInRow = checkWin(cell, currentPlayer);
-    bool opponentCanBreakFive = false;
-
-    if (hasFiveInRow) {
-      opponentCanBreakFive =
-          canOpponentBreakFiveByCapture(cell, currentPlayer, grid);
-    }
-
-    bool winByAlignment = hasFiveInRow && !opponentCanBreakFive;
-
-    bool winByCapture = (currentPlayer == Stone::BLACK) ? (blackCaptured >= 10)
-                                                        : (whiteCaptured >= 10);
-
-    Stone opponent =
-        (currentPlayer == Stone::BLACK) ? Stone::WHITE : Stone::BLACK;
-    int opponentCaptured =
-        (opponent == Stone::BLACK) ? blackCaptured : whiteCaptured;
-    bool opponentWinsByCaptureThreat =
-        hasFiveInRow && opponentCanBreakFive && opponentCaptured >= 8;
-
-    if (winByAlignment || winByCapture) {
-      winner = currentPlayer;
-      if (winByAlignment) {
-        winningLine = getFiveInARowPositions(cell, currentPlayer, grid);
-      }
-      setStone(previousOutlineCell, Stone::EMPTY);
-      previousOutlineCell = {-1, -1};
-    } else if (opponentWinsByCaptureThreat) {
-      winner = opponent;
+    if (winner != Stone::EMPTY) {
       setStone(previousOutlineCell, Stone::EMPTY);
       previousOutlineCell = {-1, -1};
     } else {
-      currentPlayer =
-          (currentPlayer == Stone::BLACK) ? Stone::WHITE : Stone::BLACK;
-
       if (gameMode == GameMode::AI_VS_HUMAN && currentPlayer == aiColor) {
         isAiThinking = true;
         aiThinkStartTime = std::chrono::steady_clock::now();
@@ -314,9 +312,6 @@ int GomokuBoard::handle(int event) {
         updateSuggestion();
       }
     }
-
-    recordMoveToHistory(cell, currentPlayer, blackCapturedBefore,
-                        whiteCapturedBefore);
 
     timer.resetTimer();
     redraw();
@@ -382,64 +377,16 @@ void GomokuBoard::makeAIMove() {
     lastEvaluationHeatmap = m.getEvaluationHeatmap();
     heatmapNeedsRedraw = true;
 
-    if (currentPlayer == Stone::BLACK) {
+    if (currentPlayer == Stone::BLACK)
       blackMoveCount++;
-    } else {
+    else
       whiteMoveCount++;
-    }
 
-    // Save capture counts before applying captures
-    int blackCapturedBefore = blackCaptured;
-    int whiteCapturedBefore = whiteCaptured;
+    commitMove(aiResult.move);
 
-    int capturedStones =
-        countCapturedPairs(aiResult.move, currentPlayer, grid) * 2;
-    if (currentPlayer == Stone::BLACK) {
-      blackCaptured += capturedStones;
-    } else {
-      whiteCaptured += capturedStones;
-    }
-
-    setStone(aiResult.move, currentPlayer);
-    this->lastMove = aiResult.move;
-
-    if (capturedStones > 0)
-      applyCaptures(aiResult.move);
-
-    bool hasFiveInRow = checkWin(aiResult.move, currentPlayer);
-    bool opponentCanBreakFive = false;
-
-    if (hasFiveInRow) {
-      opponentCanBreakFive =
-          canOpponentBreakFiveByCapture(aiResult.move, currentPlayer, grid);
-    }
-
-    bool winByAlignment = hasFiveInRow && !opponentCanBreakFive;
-    bool winByCapture = (currentPlayer == Stone::BLACK) ? (blackCaptured >= 10)
-                                                        : (whiteCaptured >= 10);
-
-    Stone opponent =
-        (currentPlayer == Stone::BLACK) ? Stone::WHITE : Stone::BLACK;
-    int opponentCaptured =
-        (opponent == Stone::BLACK) ? blackCaptured : whiteCaptured;
-    bool opponentWinsByCaptureThreat =
-        hasFiveInRow && opponentCanBreakFive && opponentCaptured >= 8;
-
-    if (winByAlignment || winByCapture) {
-      winner = currentPlayer;
-      if (winByAlignment) {
-        winningLine =
-            getFiveInARowPositions(aiResult.move, currentPlayer, grid);
-      }
+    if (winner != Stone::EMPTY) {
       setStone(previousOutlineCell, Stone::EMPTY);
       previousOutlineCell = {-1, -1};
-    } else if (opponentWinsByCaptureThreat) {
-      winner = opponent;
-      setStone(previousOutlineCell, Stone::EMPTY);
-      previousOutlineCell = {-1, -1};
-    } else {
-      currentPlayer =
-          (currentPlayer == Stone::BLACK) ? Stone::WHITE : Stone::BLACK;
     }
 
     auto now = std::chrono::steady_clock::now();
@@ -448,10 +395,6 @@ void GomokuBoard::makeAIMove() {
     aiThinkTime = thinkDuration.count();
 
     timer.calculateTimeSpentOnMove(aiColor);
-
-    // Record move to history for undo/redo
-    recordMoveToHistory(aiResult.move, aiPlayer, blackCapturedBefore,
-                        whiteCapturedBefore);
 
     timer.resetTimer();
 
@@ -467,8 +410,7 @@ void GomokuBoard::makeAIMove() {
               << "): " << aiResult.move << " | Score: " << aiResult.score
               << " | Time: " << aiThinkTime
               << "ms | Nodes: " << totalNodesEvaluated << std::endl;
-    std::cout << "Captures: " << capturedStones
-              << " | Total - B:" << blackCaptured << " W:" << whiteCaptured
+    std::cout << "Total Captures - B:" << blackCaptured << " W:" << whiteCaptured
               << " | Moves - B:" << blackMoveCount << " W:" << whiteMoveCount
               << std::endl;
 
