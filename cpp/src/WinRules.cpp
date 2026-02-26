@@ -101,47 +101,50 @@ bool createsDoubleThree(Coord move, Stone colour, const Grid &grid) {
   if (!isValidMove(move, grid))
     return false;
 
+  Grid tmp = grid;
+  tmp[move.y][move.x] = colour;
+
   int freeThreeCount = 0;
 
   for (const auto &dir : directions) {
     int dx = dir[0];
     int dy = dir[1];
 
-    int countForward = 0;
-    int countBackward = 0;
+    bool foundInDirection = false;
+    for (int k = 1; k <= 4 && !foundInDirection; k++) {
+      // c0 is k steps behind move; c5 is (5-k) steps ahead.
+      Coord c0 = {move.x - k * dx, move.y - k * dy};
+      Coord c5 = {move.x + (5 - k) * dx, move.y + (5 - k) * dy};
 
-    for (int i = 1; i < 4; i++) {
-      Coord forward = {move.x + i * dx, move.y + i * dy};
-      if (isInBounds(forward) && grid[forward.y][forward.x] == colour)
-        countForward++;
-      else
-        break;
+      if (!isInBounds(c0) || tmp[c0.y][c0.x] != Stone::EMPTY)
+        continue;
+      if (!isInBounds(c5) || tmp[c5.y][c5.x] != Stone::EMPTY)
+        continue;
+
+      int colourCount = 0;
+      int emptyCount = 0;
+      bool blocked = false;
+
+      for (int i = 1; i <= 4; i++) {
+        Coord ci = {move.x + (i - k) * dx, move.y + (i - k) * dy};
+        if (!isInBounds(ci)) { blocked = true; break; }
+        Stone s = tmp[ci.y][ci.x];
+        if (s == colour)
+          colourCount++;
+        else if (s == Stone::EMPTY)
+          emptyCount++;
+        else {
+          blocked = true;
+          break;
+        }
+      }
+
+      if (!blocked && colourCount == 3 && emptyCount == 1)
+        foundInDirection = true;
     }
 
-    for (int i = 1; i < 4; i++) {
-      Coord backward = {move.x - i * dx, move.y - i * dy};
-      if (isInBounds(backward) && grid[backward.y][backward.x] == colour)
-        countBackward++;
-      else
-        break;
-    }
-
-    int totalCount = 1 + countForward + countBackward;
-
-    if (totalCount >= 3) {
-      Coord endForward = {move.x + (countForward + 1) * dx,
-                          move.y + (countForward + 1) * dy};
-      Coord endBackward = {move.x - (countBackward + 1) * dx,
-                           move.y - (countBackward + 1) * dy};
-
-      bool forwardOpen = !isInBounds(endForward) ||
-                         grid[endForward.y][endForward.x] == Stone::EMPTY;
-      bool backwardOpen = !isInBounds(endBackward) ||
-                          grid[endBackward.y][endBackward.x] == Stone::EMPTY;
-
-      if (totalCount == 3 && forwardOpen && backwardOpen)
-        freeThreeCount++;
-    }
+    if (foundInDirection)
+      freeThreeCount++;
   }
 
   return freeThreeCount >= 2;
