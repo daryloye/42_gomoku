@@ -12,6 +12,7 @@
 #include <string>
 #include <unistd.h>
 #include <vector>
+#include <map>
 
 // https://www.fltk.org/doc-1.4/intro.html
 #include <FL/Fl.H>

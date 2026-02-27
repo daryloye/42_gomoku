@@ -9,13 +9,16 @@ CPPFLAGS	=	-I./include $(shell fltk-config --cxxflags)
 LDFLAGS		=	-O3 -flto -no-pie -Wl,-z,now -Wl,--no-as-needed -static-libstdc++ -ldl $(shell fltk-config --ldflags)
 
 SRCS			=	src/main.cpp \
-						src/Board.cpp \
-						src/BoardDraw.cpp \
-						src/Timer.cpp \
-						src/WinRules.cpp \
-						src/Minimax.cpp \
-						src/Utils.cpp \
-						src/BitmapFont.cpp
+					src/Board.cpp \
+					src/BoardDraw.cpp \
+					src/Timer.cpp \
+					src/WinRules.cpp \
+					src/Utils.cpp \
+					src/BitmapFont.cpp \
+					src/Minimax/Minimax.cpp \
+					src/Minimax/evaluateMove.cpp \
+					src/Minimax/getPossibleMoves.cpp \
+					src/Minimax/isWinningMove.cpp
 
 HEADERS		=	include/Board.hpp \
 						include/BitmapFont.hpp \
