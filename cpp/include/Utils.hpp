@@ -5,4 +5,8 @@ Coord windowToBoardCoordinates(Coord windowCoords);
 std::ostream& operator<< (std::ostream& os, Stone stone);
 std::ostream& operator<< (std::ostream& os, Coord coord);
 
+const int DIRECTIONS[4][2] = {{1, 0}, {0, 1}, {1, 1}, {1, -1}};
+Stone opponentOf(Stone colour);
+bool isInBounds(Coord c);
+
 #endif

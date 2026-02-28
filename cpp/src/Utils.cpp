@@ -27,3 +27,13 @@ std::ostream& operator<< (std::ostream& os, Coord coord) {
   os << "(" << coord.x << ", " << coord.y << ")";
   return os;
 }
+
+
+
+Stone opponentOf(Stone colour) {
+  return (colour == Stone::BLACK) ? Stone::WHITE : Stone::BLACK;
+}
+
+bool isInBounds(Coord c) {
+  return c.x >= 0 && c.x < BOARD_SIZE && c.y >= 0 && c.y < BOARD_SIZE;
+}

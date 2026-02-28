@@ -7,6 +7,22 @@ Minimax::Minimax(const Stone aiColour, const Stone opponentColour)
 
 Minimax::~Minimax() {}
 
+
+static void updateAlphaBeta(const MinimaxResult& result, const Coord& move,
+                              bool isCurrentColourAI, MinimaxResult& best,
+                              float& alpha, float& beta)
+{
+  if (isCurrentColourAI) {
+    if (result.score > best.score)
+      best = {result.score, move};
+    alpha = std::max(alpha, best.score);
+  } else {
+    if (result.score < best.score)
+      best = {result.score, move};
+    beta = std::min(beta, best.score);
+  }
+}
+
 // Minimax algorithm: AI wants to maximize its score, opponent want to minimize
 // AI's score alpha-beta pruning:
 // 	- alpha: best score for ai so far
@@ -16,7 +32,7 @@ MinimaxResult Minimax::minimax(const Grid &grid, Coord lastMove, int depth,
                                float alpha, float beta) {
 
   // Check if previous move has won
-  if (isWinningMove(grid, lastMove, prevColour)) {
+  if (hasPlayerWon(lastMove, prevColour, grid)) {
     std::cout << "player has won" << std::endl;
     return {(prevColour == _aiColour) ? WIN_SCORE : -WIN_SCORE, lastMove};
   }
@@ -28,7 +44,6 @@ MinimaxResult Minimax::minimax(const Grid &grid, Coord lastMove, int depth,
 
   std::vector<Coord> moves = getPossibleMoves(grid);
   if (moves.empty()) {
-    std::cout << "empty moves" << std::endl;
     return {evaluateMove(grid, lastMove), lastMove};
   }
   
@@ -38,25 +53,19 @@ MinimaxResult Minimax::minimax(const Grid &grid, Coord lastMove, int depth,
 
   // Check for obvious winning moves
   for (Coord move : moves) {
-
-    
     auto newGrid = grid;
     newGrid[move.y][move.x] = currentColour;
-    if (isWinningMove(newGrid, move, currentColour)) {
-      std::cout << "found a winning move" << std::endl;
+    if (hasPlayerWon(move, currentColour, newGrid)) {
       return {(currentColour == _aiColour) ? WIN_SCORE : -WIN_SCORE, move};
     }
   }
-  // std::cout << "Thinking about " << std::endl;
 
   // Check for obvious blocking moves (ie if the other colour made the move will it win)
   std::vector<Coord> blockingMoves;
   for (Coord move : moves) {
-
     auto newGrid = grid;
     newGrid[move.y][move.x] = prevColour;
-    if (isWinningMove(newGrid, move, prevColour)) {
-      // std::cout << depth << " need to block" << move << std::endl;
+    if (hasPlayerWon(move, prevColour, newGrid)) {
       blockingMoves.push_back(move);
     }
   }
@@ -68,31 +77,15 @@ MinimaxResult Minimax::minimax(const Grid &grid, Coord lastMove, int depth,
 
   // Next level -> swap colours
   for (Coord move : moves) {
-
     auto newGrid = grid;
     newGrid[move.y][move.x] = currentColour;
     MinimaxResult result = minimax(newGrid, move, depth - 1, prevColour,
                                    currentColour, alpha, beta);
 
-    updateAlphaBeta(result, move, currentColour, best, alpha, beta);
+    updateAlphaBeta(result, move, (currentColour == _aiColour), best, alpha, beta);
     if (beta <= alpha)
       break;
   }
 
   return best;
-}
-
-void Minimax::updateAlphaBeta(const MinimaxResult& result, const Coord& move,
-                              Stone currentColour, MinimaxResult& best,
-                              float& alpha, float& beta)
-{
-  if (currentColour == _aiColour) {
-    if (result.score > best.score)
-      best = {result.score, move};
-    alpha = std::max(alpha, best.score);
-  } else {
-    if (result.score < best.score)
-      best = {result.score, move};
-    beta = std::min(beta, best.score);
-  }
 }

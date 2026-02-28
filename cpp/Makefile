@@ -17,8 +17,7 @@ SRCS			=	src/main.cpp \
 					src/BitmapFont.cpp \
 					src/Minimax/Minimax.cpp \
 					src/Minimax/evaluateMove.cpp \
-					src/Minimax/getPossibleMoves.cpp \
-					src/Minimax/isWinningMove.cpp
+					src/Minimax/getPossibleMoves.cpp
 
 HEADERS		=	include/Board.hpp \
 						include/BitmapFont.hpp \

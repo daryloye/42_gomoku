@@ -1,47 +1,33 @@
 #include "Gomoku.hpp"
 
-static const int directions[4][2] = {{1, 0}, {0, 1}, {1, 1}, {1, -1}};
-
-// All these functions can be used in minimax.cpp
-static Stone opponentOf(Stone colour) {
-  return (colour == Stone::BLACK) ? Stone::WHITE : Stone::BLACK;
-}
-
-int count_x_in_a_row(Coord move, Stone colour, const Grid &grid) {
-  int best = 1;
-
-  for (auto &d : directions) {
-    int dy = d[0];
-    int dx = d[1];
-
-    int count = 1;
-
-    for (int yy = move.y + dy, xx = move.x + dx;
-         yy >= 0 && yy < BOARD_SIZE && xx >= 0 && xx < BOARD_SIZE &&
-         grid[yy][xx] == colour;
-         yy += dy, xx += dx) {
-      count++;
-    }
-
-    for (int yy = move.y - dy, xx = move.x - dx;
-         yy >= 0 && yy < BOARD_SIZE && xx >= 0 && xx < BOARD_SIZE &&
-         grid[yy][xx] == colour;
-         yy -= dy, xx -= dx) {
-      count++;
-    }
-
-    best = std::max(count, best);
+static int countInOneDirection(const Grid& grid, const Coord& coord, int dx, int dy, Stone stone) {
+  int count = 0;
+  int nx = coord.x + dx;
+  int ny = coord.y + dy;
+  
+  while (isInBounds({nx, ny}) && grid[ny][nx] == stone) {
+    count++;
+    nx += dx;
+    ny += dy;
   }
-
-  return best;
+  return count;
 }
 
-bool hasPlayerWon(Coord move, Stone colour, const Grid &grid) {
-  return count_x_in_a_row(move, colour, grid) >= 5;
+static bool isFiveInARow(const Grid& grid, const Coord& coord, Stone stone) {
+  for (const auto &dir : DIRECTIONS) {
+    int dx = dir[0];
+    int dy = dir[1];
+    int a = countInOneDirection(grid, coord, dx, dy, stone);
+    int b = countInOneDirection(grid, coord, -dx, -dy, stone);
+    if (1 + a + b >= 5) return true;
+  }
+  return false;
 }
 
-bool isThreatDetected(Coord move, Stone colour, const Grid &grid) {
-  return count_x_in_a_row(move, colour, grid) >= 3;
+
+
+bool hasPlayerWon(const Coord& move, Stone stone, const Grid &grid) {
+  return isFiveInARow(grid, move, stone);
 }
 
 bool isValidMove(Coord cell, const Grid &grid) {
@@ -59,7 +45,7 @@ int countCapturedPairs(Coord move, Stone colour, const Grid &grid) {
   Stone opponent = opponentOf(colour);
   int capturedCount = 0;
 
-  for (const auto &dir : directions) {
+  for (const auto &dir : DIRECTIONS) {
     int dx = dir[0];
     int dy = dir[1];
 
@@ -93,9 +79,7 @@ int countCapturedPairs(Coord move, Stone colour, const Grid &grid) {
   return capturedCount;
 }
 
-static bool isInBounds(Coord c) {
-  return c.x >= 0 && c.x < BOARD_SIZE && c.y >= 0 && c.y < BOARD_SIZE;
-}
+
 
 bool createsDoubleThree(Coord move, Stone colour, const Grid &grid) {
   if (!isValidMove(move, grid))
@@ -106,7 +90,7 @@ bool createsDoubleThree(Coord move, Stone colour, const Grid &grid) {
 
   int freeThreeCount = 0;
 
-  for (const auto &dir : directions) {
+  for (const auto &dir : DIRECTIONS) {
     int dx = dir[0];
     int dy = dir[1];
 
@@ -153,7 +137,7 @@ bool createsDoubleThree(Coord move, Stone colour, const Grid &grid) {
 bool wouldMoveIntoCapture(Coord cell, Stone colour, const Grid &grid) {
   Stone opponent = opponentOf(colour);
 
-  for (const auto &dir : directions) {
+  for (const auto &dir : DIRECTIONS) {
     int dx = dir[0];
     int dy = dir[1];
 
@@ -185,7 +169,7 @@ std::vector<Coord> getFiveInARowPositions(Coord move, Stone colour,
                                           const Grid &grid) {
   std::vector<Coord> positions;
 
-  for (auto &d : directions) {
+  for (auto &d : DIRECTIONS) {
     int dy = d[0];
     int dx = d[1];
     std::vector<Coord> linePositions;
@@ -224,7 +208,7 @@ bool canOpponentBreakFiveByCapture(Coord move, Stone colour, const Grid &grid) {
   Stone opponent = opponentOf(colour);
 
   for (const Coord &pos : fivePositions) {
-    for (const auto &dir : directions) {
+    for (const auto &dir : DIRECTIONS) {
       int dx = dir[0];
       int dy = dir[1];
 

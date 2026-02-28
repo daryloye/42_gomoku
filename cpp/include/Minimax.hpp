@@ -26,10 +26,7 @@ private:
   CountGrid _evaluationCount;
 
   std::vector<Coord> getPossibleMoves(const Grid& grid);
-  bool isWinningMove(const Grid& grid, const Coord& move, Stone stone);
   float evaluateMove(const Grid& grid, const Coord& move);
-  void updateAlphaBeta(const MinimaxResult& result, const Coord& move, Stone currentColour,
-                        MinimaxResult& best, float& alpha, float& beta);
 };
 
 #endif

@@ -36,11 +36,11 @@ std::vector<Coord> Minimax::getPossibleMoves(const Grid& grid) {
           if (dx == 0 && dy == 0)
             continue;
 
-          int ny = y + dy;
-          int nx = x + dx;
+          int nx = dx + x;
+          int ny = dy + y;
 
           // check out of board limits
-          if (ny < 0 || ny >= BOARD_SIZE || nx < 0 || nx >= BOARD_SIZE)
+          if (!isInBounds({nx, ny}))
             continue;
           
           // check space is occupied
