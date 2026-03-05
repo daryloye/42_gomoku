@@ -10,12 +10,18 @@ public:
   void resetTimer();
   void calculateTimeSpentOnMove(Stone currentPlayer);
 
-  std::chrono::steady_clock::time_point moveStartTime;
-  float lastMoveTime;
-  float lastBlackMoveTime;
-  float lastWhiteMoveTime;
-  float totalBlackTime;
-  float totalWhiteTime;
+  float totalBlackTime() const { return _totalBlackTime; }
+  float totalWhiteTime() const { return _totalWhiteTime; }
+  float lastBlackMoveTime() const { return _lastBlackMoveTime; }
+  float lastWhiteMoveTime() const { return _lastWhiteMoveTime; }
+
+private:
+  std::chrono::steady_clock::time_point _moveStartTime;
+  float _lastMoveTime;
+  float _lastBlackMoveTime;
+  float _lastWhiteMoveTime;
+  float _totalBlackTime;
+  float _totalWhiteTime;
 };
 
 #endif

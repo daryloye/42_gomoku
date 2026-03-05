@@ -7,7 +7,8 @@ int countCapturedPairs(Coord move, Stone colour, const Grid &grid);
 bool createsDoubleThree(Coord move, Stone colour, const Grid &grid);
 bool canOpponentBreakFiveByCapture(Coord move, Stone colour, const Grid &grid);
 bool wouldMoveIntoCapture(Coord cell, Stone colour, const Grid &grid);
-std::vector<Coord> getFiveInARowPositions(Coord move, Stone colour,
-                                          const Grid &grid);
+std::vector<Coord> getFiveInARowPositions(Coord move, Stone colour, const Grid &grid);
+void analyzeDoubleThree(Coord move, Stone colour, const Grid &grid,
+                        std::array<bool, 4> &directions);
 
 #endif

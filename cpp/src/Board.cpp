@@ -55,61 +55,10 @@ bool GomokuBoard::checkWin(Coord cell, Stone stone) const {
   return hasPlayerWon(cell, stone, grid);
 }
 
-void GomokuBoard::analyzeDoubleThree(Coord move, Stone colour,
-                                     std::array<bool, 4> &directions) {
-  const int dirs[4][2] = {{1, 0}, {0, 1}, {1, 1}, {1, -1}};
-
-  for (int d = 0; d < 4; d++) {
-    int dx = dirs[d][0];
-    int dy = dirs[d][1];
-
-    int countForward = 0;
-    int countBackward = 0;
-
-    for (int i = 1; i < 4; i++) {
-      Coord forward = {move.x + i * dx, move.y + i * dy};
-      if (forward.x >= 0 && forward.x < BOARD_SIZE && forward.y >= 0 &&
-          forward.y < BOARD_SIZE && grid[forward.y][forward.x] == colour)
-        countForward++;
-      else
-        break;
-    }
-
-    for (int i = 1; i < 4; i++) {
-      Coord backward = {move.x - i * dx, move.y - i * dy};
-      if (backward.x >= 0 && backward.x < BOARD_SIZE && backward.y >= 0 &&
-          backward.y < BOARD_SIZE && grid[backward.y][backward.x] == colour)
-        countBackward++;
-      else
-        break;
-    }
-
-    int totalCount = 1 + countForward + countBackward;
-
-    if (totalCount >= 3) {
-      Coord endForward = {move.x + (countForward + 1) * dx,
-                          move.y + (countForward + 1) * dy};
-      Coord endBackward = {move.x - (countBackward + 1) * dx,
-                           move.y - (countBackward + 1) * dy};
-
-      bool forwardOpen = (endForward.x < 0 || endForward.x >= BOARD_SIZE ||
-                          endForward.y < 0 || endForward.y >= BOARD_SIZE) ||
-                         grid[endForward.y][endForward.x] == Stone::EMPTY;
-      bool backwardOpen = (endBackward.x < 0 || endBackward.x >= BOARD_SIZE ||
-                           endBackward.y < 0 || endBackward.y >= BOARD_SIZE) ||
-                          grid[endBackward.y][endBackward.x] == Stone::EMPTY;
-
-      if (totalCount == 3 && forwardOpen && backwardOpen)
-        directions[d] = true;
-    }
-  }
-}
-
 void GomokuBoard::applyCaptures(Coord cell) {
   Stone opponent = (currentPlayer == Stone::BLACK) ? Stone::WHITE : Stone::BLACK;
-  const int dirs[4][2] = {{1, 0}, {0, 1}, {1, 1}, {1, -1}};
 
-  for (const auto &dir : dirs) {
+  for (const auto &dir : DIRECTIONS) {
     int dx = dir[0];
     int dy = dir[1];
 
@@ -264,7 +213,7 @@ int GomokuBoard::handle(int event) {
       illegalMoveCell = cell;
       hasIllegalMove = true;
       illegalDirections = {false, false, false, false};
-      analyzeDoubleThree(cell, currentPlayer, illegalDirections);
+      analyzeDoubleThree(cell, currentPlayer, grid, illegalDirections);
       redraw();
       return 1;
     }
@@ -568,8 +517,8 @@ void GomokuBoard::recordMoveToHistory(Coord move, Stone player,
   record.boardState = grid;
   record.blackCapturedBefore = blackCapturedBefore;
   record.whiteCapturedBefore = whiteCapturedBefore;
-  record.blackTimeAtMove = timer.totalBlackTime;
-  record.whiteTimeAtMove = timer.totalWhiteTime;
+  record.blackTimeAtMove = timer.totalBlackTime();
+  record.whiteTimeAtMove = timer.totalWhiteTime();
 
   moveHistory.push_back(record);
   currentHistoryIndex++;

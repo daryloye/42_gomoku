@@ -63,8 +63,6 @@ private:
   void drawModeButtons();
   void makeAIMove();
   bool clickedModeButton(int x, int y);
-  void analyzeDoubleThree(Coord move, Stone colour,
-                          std::array<bool, 4> &directions);
   void updateSuggestion();
   void recordMoveToHistory(Coord move, Stone player, int blackCapturedBefore,
                            int whiteCapturedBefore);

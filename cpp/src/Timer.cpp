@@ -10,30 +10,30 @@ Timer::~Timer()
 
 void Timer::resetAll()
 {
-  totalBlackTime = 0.0f;
-  totalWhiteTime = 0.0f;
-  lastMoveTime = 0.0f;
-  lastBlackMoveTime = 0.0f;
-  lastWhiteMoveTime = 0.0f;
-  moveStartTime = std::chrono::steady_clock::now();
+  _totalBlackTime = 0.0f;
+  _totalWhiteTime = 0.0f;
+  _lastMoveTime = 0.0f;
+  _lastBlackMoveTime = 0.0f;
+  _lastWhiteMoveTime = 0.0f;
+  _moveStartTime = std::chrono::steady_clock::now();
 }
 
 void Timer::resetTimer()
 {
-  moveStartTime = std::chrono::steady_clock::now();
+  _moveStartTime = std::chrono::steady_clock::now();
 }
 
 void Timer::calculateTimeSpentOnMove(Stone currentPlayer)
 {
   auto now = std::chrono::steady_clock::now();
-  auto duration = std::chrono::duration_cast<std::chrono::milliseconds>(now - moveStartTime);
-  lastMoveTime = duration.count();
+  auto duration = std::chrono::duration_cast<std::chrono::milliseconds>(now - _moveStartTime);
+  _lastMoveTime = duration.count();
 
   if (currentPlayer == Stone::BLACK) {
-    lastBlackMoveTime = lastMoveTime;
-    totalBlackTime += lastMoveTime;
+    _lastBlackMoveTime = _lastMoveTime;
+    _totalBlackTime += _lastMoveTime;
   } else {
-    lastWhiteMoveTime = lastMoveTime;
-    totalWhiteTime += lastMoveTime;
+    _lastWhiteMoveTime = _lastMoveTime;
+    _totalWhiteTime += _lastMoveTime;
   }
 }

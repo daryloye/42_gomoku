@@ -134,6 +134,50 @@ bool createsDoubleThree(Coord move, Stone colour, const Grid &grid) {
   return freeThreeCount >= 2;
 }
 
+void analyzeDoubleThree(Coord move, Stone colour, const Grid &grid,
+                        std::array<bool, 4> &directions) {
+  for (int d = 0; d < 4; d++) {
+    int dx = DIRECTIONS[d][0];
+    int dy = DIRECTIONS[d][1];
+
+    int countForward = 0;
+    int countBackward = 0;
+
+    for (int i = 1; i < 4; i++) {
+      Coord forward = {move.x + i * dx, move.y + i * dy};
+      if (isInBounds(forward) && grid[forward.y][forward.x] == colour)
+        countForward++;
+      else
+        break;
+    }
+
+    for (int i = 1; i < 4; i++) {
+      Coord backward = {move.x - i * dx, move.y - i * dy};
+      if (isInBounds(backward) && grid[backward.y][backward.x] == colour)
+        countBackward++;
+      else
+        break;
+    }
+
+    int totalCount = 1 + countForward + countBackward;
+
+    if (totalCount >= 3) {
+      Coord endForward = {move.x + (countForward + 1) * dx,
+                          move.y + (countForward + 1) * dy};
+      Coord endBackward = {move.x - (countBackward + 1) * dx,
+                           move.y - (countBackward + 1) * dy};
+
+      bool forwardOpen = !isInBounds(endForward) ||
+                         grid[endForward.y][endForward.x] == Stone::EMPTY;
+      bool backwardOpen = !isInBounds(endBackward) ||
+                          grid[endBackward.y][endBackward.x] == Stone::EMPTY;
+
+      if (totalCount == 3 && forwardOpen && backwardOpen)
+        directions[d] = true;
+    }
+  }
+}
+
 bool wouldMoveIntoCapture(Coord cell, Stone colour, const Grid &grid) {
   Stone opponent = opponentOf(colour);
 

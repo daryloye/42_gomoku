@@ -360,15 +360,15 @@ void GomokuBoard::drawUI() {
   char blackTimeStr[80];
   char whiteTimeStr[80];
   float blackAvg =
-      (blackMoveCount > 0) ? timer.totalBlackTime / blackMoveCount : 0.0f;
+      (blackMoveCount > 0) ? timer.totalBlackTime() / blackMoveCount : 0.0f;
   float whiteAvg =
-      (whiteMoveCount > 0) ? timer.totalWhiteTime / whiteMoveCount : 0.0f;
+      (whiteMoveCount > 0) ? timer.totalWhiteTime() / whiteMoveCount : 0.0f;
   snprintf(blackTimeStr, sizeof(blackTimeStr),
            "BLACK: avg %.1fms / last %.1fms | Captured: %d", blackAvg,
-           timer.lastBlackMoveTime, blackCaptured);
+           timer.lastBlackMoveTime(), blackCaptured);
   snprintf(whiteTimeStr, sizeof(whiteTimeStr),
            "WHITE: avg %.1fms / last %.1fms | Captured: %d", whiteAvg,
-           timer.lastWhiteMoveTime, whiteCaptured);
+           timer.lastWhiteMoveTime(), whiteCaptured);
 
   BitmapFont::drawText(blackTimeStr, OFFSET, h() - BOTTOM_MARGIN + 5, 1);
   BitmapFont::drawText(whiteTimeStr, OFFSET, h() - BOTTOM_MARGIN + 25, 1);
